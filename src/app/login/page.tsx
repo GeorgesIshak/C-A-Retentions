@@ -1,25 +1,15 @@
 "use client";
 
-import { useRouter, useSearchParams } from "next/navigation";
-
 export default function LoginPage() {
-  const router = useRouter();
-  const sp = useSearchParams();
-
   function handleLogin(e: React.FormEvent) {
     e.preventDefault();
-
-    // 🚧 Mock login: sets a cookie
-document.cookie = "session=demo-user; Path=/; Max-Age=86400; SameSite=Lax";
-
-    // go to "next" if provided, otherwise /dashboard
-    const next = sp.get("next") || "/dashboard/contacts";
-    router.replace(next);
+    // no-op for now — backend will handle real login later
+    alert("Login disabled until backend is ready.");
   }
 
   return (
     <main className="mx-auto max-w-md px-6 py-12 text-black">
-      <h1 className="text-2xl font-bold mb-6">Login (mock)</h1>
+      <h1 className="text-2xl font-bold mb-6">Login</h1>
       <form onSubmit={handleLogin} className="space-y-4">
         <input
           placeholder="Email"

@@ -12,7 +12,7 @@ type Contact = {
   templateId?: string | null; // chosen template per row
 };
 
-// Message templates (mock for now)
+// Local message templates (pure front-end)
 const TEMPLATES = [
   { id: "sms-welcome", label: "SMS — Welcome" },
   { id: "sms-thanks",  label: "SMS — Thanks for visiting" },
@@ -20,14 +20,14 @@ const TEMPLATES = [
 ];
 
 export default function ContactsPage() {
-  // Start empty — this matches your “first load” requirement
+  // Start empty — matches “first load” requirement
   const [rows, setRows] = useState<Contact[]>([]);
   const [qrOpen, setQrOpen] = useState(false);
 
-  // later: backend should return this URL (POST /qr). For now just mock it:
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
-  const token  = "tenant_demo_token"; // replace with real token when backend is ready
-  const qrUrl  = `${appUrl}/guest-form?t=${encodeURIComponent(token)}`;
+  // Build QR URL from current origin; placeholder token until backend exists
+  const origin = typeof window !== "undefined" ? window.location.origin : "";
+  const token  = "demo-tenant-token";
+  const qrUrl  = `${origin}/guest-form?t=${encodeURIComponent(token)}`;
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-6">

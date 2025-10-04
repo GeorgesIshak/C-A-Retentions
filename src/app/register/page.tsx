@@ -1,10 +1,8 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useState } from "react";
 
 export default function RegisterPage() {
-  const router = useRouter();
   const [form, setForm] = useState({
     name: "",
     email: "",
@@ -16,16 +14,11 @@ export default function RegisterPage() {
     setForm((f) => ({ ...f, [key]: val }));
   }
 
-  async function onSubmit(e: React.FormEvent) {
+  function onSubmit(e: React.FormEvent) {
     e.preventDefault();
-
-    // 🚧 MOCK: later call real API POST /auth/register
-    console.log("Registering:", form);
-
-    // fake "logged in"
-    document.cookie = `session=demo-user; path=/;`;
-
-    router.replace("/billing");
+    // no-op for now — real API call will go here later
+    alert("Registration disabled until backend is ready.");
+    console.log("Form data:", form);
   }
 
   return (
@@ -73,7 +66,9 @@ export default function RegisterPage() {
 
       <p className="mt-4 text-sm text-white/60">
         Already have an account?{" "}
-        <a href="/login" className="underline">Login</a>
+        <a href="/login" className="underline">
+          Login
+        </a>
       </p>
     </main>
   );

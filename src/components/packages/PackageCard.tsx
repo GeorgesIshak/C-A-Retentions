@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { MouseEvent } from "react";
-import { useRouter } from "next/navigation";
+
 
 type Props = {
   title: string;
@@ -11,9 +11,11 @@ type Props = {
   sms: number;
   emails: number;
   open: boolean;
-  onClick: () => void;
+  onClick: () => void;           
+  onProceed?: () => void;        
   className?: string;
   bgImage: string;
+  ctaLabel?: string;             
 };
 
 export default function PackageCard({
@@ -24,25 +26,16 @@ export default function PackageCard({
   emails,
   open,
   onClick,
+  onProceed,
   className = "",
   bgImage,
+  ctaLabel = "Proceed",
 }: Props) {
-  const router = useRouter();
 
   function onCtaClick(e: MouseEvent<HTMLButtonElement>) {
     e.stopPropagation();
-
-    // --- SIMPLE FLOW NOW ---
-    // If you want to force login first, uncomment the block below.
-    // const hasSession = document.cookie.includes("session=");
-    // if (!hasSession) {
-    //   router.push("/login?next=/billing");
-    //   return;
-    // }
-
-    // Mock a successful purchase (until backend/Stripe is wired)
-    document.cookie = `subscription=active; path=/;`;
-    router.replace("/dashboard/contacts");
+    // Pure UI: let parent handle the action
+    onProceed?.();
   }
 
   return (
@@ -101,7 +94,7 @@ export default function PackageCard({
               <li key={item} className="flex items-center gap-3">
                 <Image
                   src="/images/checkcircle.svg"
-                  alt="check"
+                  alt=""
                   width={20}
                   height={20}
                   className="shrink-0"
@@ -124,7 +117,7 @@ export default function PackageCard({
               <div className="h-full w-full rounded-tl-[32px] bg-white/85 shadow-[0_12px_30px_-10px_rgba(2,26,64,0.25)] flex items-end justify-end">
                 <button
                   type="button"
-                  aria-label="Proceed"
+                  aria-label={ctaLabel}
                   onClick={onCtaClick}
                   className="pointer-events-auto m-1 h-10 w-[76px] rounded-[32px] bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] flex items-center justify-center hover:scale-105 transition"
                 >

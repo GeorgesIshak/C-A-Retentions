@@ -2,31 +2,9 @@ import PackageGrid from "@/components/packages/PackageGrid";
 import type { PackagePlan } from "@/types/packagePlan";
 import { MOCK_PACKAGES } from "@/mocks/packages";
 
-const USE_API = false;
-const API_URL =
-  process.env.NEXT_PUBLIC_PACKAGES_API ?? "http://localhost:3000/api/packages";
+export default function Page() {
+  const packages: PackagePlan[] = MOCK_PACKAGES;
 
-async function fetchPackages(): Promise<PackagePlan[]> {
-  if (USE_API) {
-    const res = await fetch(API_URL, { cache: "no-store" });
-    if (!res.ok) throw new Error("Failed to load packages");
-    const data = (await res.json()) as PackagePlan[];
-    return data;
-  }
-
-  // fallback
-  return MOCK_PACKAGES;
-}
-
-export default async function Page() {
-  let packages: PackagePlan[] = [];
-  try {
-    packages = await fetchPackages();
-  } catch (e) {
-    console.error("Error fetching packages:", e);
-  }
-
-  // 👇 your section + grid
   return (
     <main className="mx-auto max-w-7xl ">
       <section className="pt-10 md:pt-14 text-white">
