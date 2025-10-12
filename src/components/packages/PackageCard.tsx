@@ -90,7 +90,7 @@ export default function PackageCard({
 
           {/* features list */}
           <ul className="mt-auto grid gap-4 text-[#172A45]">
-            {[`${sms}+ Number of SMS`, `${emails}+ Number of Emails`].map((item) => (
+            {[`${sms} Number of SMS`, `${emails} Number of Emails`].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <Image
                   src="/images/checkcircle.svg"

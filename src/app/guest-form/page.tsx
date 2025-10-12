@@ -1,85 +1,113 @@
-// src/app/guest-form/page.tsx
-"use client";
+// app/guest-form/page.tsx
+'use client';
 
-import { Suspense, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useState } from 'react';
+import { useSearchParams } from 'next/navigation';
+import { submitGuest } from '@/lib/actions/guest';
 
 export default function GuestFormPage() {
-  return (
-    <Suspense fallback={<div className="p-10 text-center">Loading…</div>}>
-      <GuestFormInner />
-    </Suspense>
-  );
-}
-
-function GuestFormInner() {
   const sp = useSearchParams();
-  const token = sp.get("t") ?? "";
+  const uid = sp.get('uid') ?? '';
 
-  const [form, setForm] = useState({ name: "", email: "", phone: "" });
-  const [done, setDone] = useState(false);
+  const [successName, setSuccessName] = useState<string | null>(null);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  function update<K extends keyof typeof form>(key: K, val: string) {
-    setForm((f) => ({ ...f, [key]: val }));
-  }
-
-  function onSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    setDone(true); // no API
-  }
+    setLoading(true);
+    setErrorMsg(null);
 
-  if (done) {
-    return (
-      <main className="min-h-screen grid place-items-center p-6">
-        <div className="max-w-md w-full rounded-2xl bg-white p-6 shadow text-center">
-          <h2 className="text-lg font-bold">Thanks! ✅</h2>
-          <p className="mt-2 text-sm text-gray-600">You’ve been added (locally only).</p>
-          {token && <p className="mt-3 text-[11px] text-gray-400">Token: {token}</p>}
-        </div>
-      </main>
-    );
+    const formData = new FormData(e.currentTarget);
+    const result = await submitGuest(formData);
+
+    setLoading(false);
+    if (result.ok) setSuccessName(result.msg);
+    else setErrorMsg(result.msg);
   }
 
   return (
-    <main className="min-h-screen grid place-items-center p-6">
-      <form onSubmit={onSubmit} className="max-w-md w-full rounded-2xl bg-white p-6 shadow space-y-4">
-        <h1 className="text-xl font-bold">Personal Information</h1>
+    <main className="min-h-screen flex items-center justify-center bg-[#F8FAFD] px-4 sm:px-6 py-10">
+      <div className="w-full max-w-md rounded-[24px] bg-white p-5 sm:p-7 shadow-xl ring-1 ring-slate-100">
+        <div className="mb-5">
+          <h3 className="text-base sm:text-xl md:text-2xl font-semibold text-[#22384F] leading-snug">
+            Personal Information
+          </h3>
+        </div>
 
-        <input
-          required
-          placeholder="Enter username"
-          className="w-full rounded-lg border px-3 py-2"
-          value={form.name}
-          onChange={(e) => update("name", e.target.value)}
-          autoComplete="name"
-        />
-        <input
-          required
-          type="email"
-          placeholder="Enter email"
-          className="w-full rounded-lg border px-3 py-2"
-          value={form.email}
-          onChange={(e) => update("email", e.target.value)}
-          autoComplete="email"
-          inputMode="email"
-        />
-        <input
-          required
-          type="tel"
-          placeholder="Enter phone number"
-          className="w-full rounded-lg border px-3 py-2"
-          value={form.phone}
-          onChange={(e) => update("phone", e.target.value)}
-          autoComplete="tel"
-          inputMode="tel"
-        />
+        {/* Success message */}
+        {successName ? (
+          <div className="rounded-md bg-green-50 p-4 text-center animate-fadeIn">
+            <p className="text-lg font-semibold text-green-700">
+              ✅ Thank you, {successName}!
+            </p>
+            <p className="text-sm text-green-600 mt-1">
+              Your information has been sent successfully.
+            </p>
+          </div>
+        ) : (
+          <>
+            {errorMsg && (
+              <div className="mb-4 rounded-md bg-rose-50 p-3 text-sm text-rose-800">
+                ❌ {errorMsg}
+              </div>
+            )}
 
-        <button type="submit" className="w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 text-white">
-          Submit
-        </button>
+            {!uid && (
+              <div className="mb-4 rounded-md bg-yellow-50 p-3 text-xs sm:text-sm text-yellow-800">
+                Missing <code>uid</code> in URL — open via a valid QR link.
+              </div>
+            )}
 
-        {token && <p className="text-[11px] text-gray-400 text-center">Token: {token}</p>}
-      </form>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <input type="hidden" name="uid" value={uid} />
+
+              <div>
+                <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
+                  User Name
+                </label>
+                <input
+                  name="fullName"
+                  required
+                  placeholder="Enter username"
+                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
+                  Email
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  placeholder="Enter email"
+                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
+                  Phone Number
+                </label>
+                <input
+                  name="phoneNumber"
+                  placeholder="Enter phone number"
+                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                />
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="mt-3 w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 sm:py-3.5 text-white text-[15px] font-medium hover:opacity-95 transition-all disabled:opacity-60"
+              >
+                {loading ? 'Submitting...' : 'Submit'}
+              </button>
+            </form>
+          </>
+        )}
+      </div>
     </main>
   );
 }

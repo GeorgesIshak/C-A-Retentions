@@ -1,9 +1,9 @@
 import PackageGrid from "@/components/packages/PackageGrid";
-import type { PackagePlan } from "@/types/packagePlan";
-import { MOCK_PACKAGES } from "@/mocks/packages";
+import { listPackages } from "@/lib/actions/admin-packages";
+import type { Package } from "@/types/packagePlan"; // <-- change path if your file is mypackagesPlan.ts
 
-export default function Page() {
-  const packages: PackagePlan[] = MOCK_PACKAGES;
+export default async function Page() {
+  const packages: Package[] = await listPackages(); // no token
 
   return (
     <main className="mx-auto max-w-7xl ">

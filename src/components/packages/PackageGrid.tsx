@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import type { PackagePlan } from "@/types/packagePlan";
+import type { Package } from "@/types/packagePlan"; // <-- change path if your file is mypackagesPlan.ts
 import PackageCard from "./PackageCard";
 
 const IMAGES = [
@@ -10,15 +10,19 @@ const IMAGES = [
   "/images/package3.png",
 ];
 
-export default function PackageGrid({ packages }: { packages: PackagePlan[] }) {
-  const [open, setOpen] = useState<number | null>(packages?.[0]?.id ?? null);
+export default function PackageGrid({ packages }: { packages: Package[] }) {
+  // id is a string in your interface
+  const [open, setOpen] = useState<string | null>(packages?.[0]?.id ?? null);
 
-  const spanFor = (id: number) =>
-    open === null
-      ? "md:col-span-4"
-      : open === id
-      ? "md:col-span-8"
-      : "md:col-span-2";
+  const spanFor = (id: string) =>
+    [
+      "col-span-1",
+      open === null
+        ? "md:col-span-4"
+        : open === id
+        ? "md:col-span-8"
+        : "md:col-span-2",
+    ].join(" ");
 
   if (!packages?.length) {
     return (
@@ -35,11 +39,17 @@ export default function PackageGrid({ packages }: { packages: PackagePlan[] }) {
       {packages.map((pkg, index) => (
         <PackageCard
           key={pkg.id}
-          {...pkg}
-          bgImage={IMAGES[index % IMAGES.length]}
+          // Map backend -> your card props (no design changes)
+          title={pkg.name}
+          price={Number(pkg.price)}
+          description={pkg.description ?? ""}
+          sms={Number(pkg.smsCount)}
+          emails={Number(pkg.emailCount)}
           open={open === pkg.id}
           onClick={() => setOpen(open === pkg.id ? null : pkg.id)}
           className={spanFor(pkg.id)}
+          bgImage={IMAGES[index % IMAGES.length]}
+          ctaLabel="Proceed"
         />
       ))}
     </section>

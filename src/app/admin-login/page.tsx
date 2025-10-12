@@ -1,10 +1,9 @@
-// app/(auth)/login/page.tsx
+// app/admin-login/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useFormStatus } from 'react-dom';
-import { login } from '@/lib/actions/auth';
+import { loginAdmin } from '@/lib/actions/auth-admin';
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -19,46 +18,35 @@ function SubmitButton() {
   );
 }
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const sp = useSearchParams();
-  const router = useRouter();
-
-  const error = sp.get('error');
-  const success = sp.get('success'); // from logout/reset
-  const nextUrl = sp.get('next') || '';
-
-  // Show the success banner once, then clean the URL
-  const [banner, setBanner] = useState<string | null>(null);
-  useEffect(() => {
-    if (!success) return;
-    setBanner(success);
-    const cleanPath = '/login' + (nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : '');
-    router.replace(cleanPath, { scroll: false }); // remove ?success from URL
-  }, [success, nextUrl, router]);
+  const error = sp.get('error') || '';
+  const info = sp.get('info') || '';         // optional success/notice banner
+  const nextUrl = sp.get('next') || '/admin/packages'; // where to go after login
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-6">
       <form
-        action={login}
-        className="w-full max-w-sm rounded-2xl bg-white/90 p-8 backdrop-blur-xl shadow-xl border border-white/10"
+        action={loginAdmin}
+        className="w-full max-w-sm rounded-2xl bg-white/90 p-8 backdrop-blur-xl shadow-xl border border-[#E6EEF5]"
       >
         <h1 className="text-center text-[#1C2E4A] text-2xl font-semibold mb-6">
           Sign In
         </h1>
 
-        {/* Success or Error banners */}
-        {banner && (
+        {/* Info / Error banners */}
+        {info ? (
           <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {banner}
+            {info}
           </div>
-        )}
-        {error && (
+        ) : null}
+        {error ? (
           <div className="mb-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
             {error}
           </div>
-        )}
+        ) : null}
 
-        {/* keep intended redirect from middleware */}
+        {/* preserve intended redirect */}
         <input type="hidden" name="next" value={nextUrl} />
 
         <div className="space-y-5">
@@ -75,9 +63,7 @@ export default function LoginPage() {
           </label>
 
           <label className="block">
-            <span className="text-[#1C2E4A] text-sm font-semibold">
-              Password
-            </span>
+            <span className="text-[#1C2E4A] text-sm font-semibold">Password</span>
             <input
               type="password"
               name="password"
@@ -88,25 +74,10 @@ export default function LoginPage() {
             />
           </label>
 
-          {/* Forgot Password link */}
-          <div className="text-right">
-            <a
-              href="/forgot"
-              className="text-sm text-[#1C2E4A]/70 hover:text-[#3D6984] underline"
-            >
-              Forgot password?
-            </a>
-          </div>
+      
         </div>
 
         <SubmitButton />
-
-        <p className="mt-4 text-center text-sm text-[#1C2E4A]/70">
-          Don’t have an account?{' '}
-          <a href="/register" className="underline hover:text-[#3D6984]">
-            Create one
-          </a>
-        </p>
       </form>
     </main>
   );
