@@ -27,7 +27,7 @@ export default async function SiteHeader() {
         {/* Dynamic Login/Profile link */}
         <Link href={targetHref} aria-label={isLoggedIn ? "Profile" : "Login"}>
           <Image
-            src="/images/user-icon.svg"
+            src="/images/usericon.svg"
             alt="User Icon"
             width={66}
             height={40}
