@@ -1,9 +1,18 @@
 import LoginForm from "./LoginForm";
 
-export default function LoginPage({
+export default async function LoginPage({
   searchParams,
-}: { searchParams: { error?: string; success?: string; next?: string } }) {
-  const { error = "", success = "", next = "" } = searchParams ?? {};
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const sp = await searchParams;
+  const pick = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v ?? "";
+
+  const error = pick(sp.error);
+  const success = pick(sp.success);
+  const next = pick(sp.next);
+
   return (
     <main className="min-h-dvh flex items-center justify-center p-6 bg-[#F6FAFD]">
       <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl border border-[#E6EEF5]">
