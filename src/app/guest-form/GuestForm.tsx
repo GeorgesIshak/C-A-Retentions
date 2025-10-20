@@ -68,7 +68,7 @@ export default function GuestFormClient({ uid }: { uid: string }) {
                   name="fullName"
                   required
                   placeholder="Enter username"
-                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
                 />
               </div>
 
@@ -80,7 +80,7 @@ export default function GuestFormClient({ uid }: { uid: string }) {
                   type="email"
                   name="email"
                   placeholder="Enter email"
-                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
                 />
               </div>
 
@@ -91,14 +91,14 @@ export default function GuestFormClient({ uid }: { uid: string }) {
                 <input
                   name="phoneNumber"
                   placeholder="Enter phone number"
-                  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
                 />
               </div>
 
               <button
                 type="submit"
                 disabled={loading}
-                className="mt-3 w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 sm:py-3.5 text-white text-[15px] font-medium hover:opacity-95 transition-all disabled:opacity-60"
+  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
               >
                 {loading ? 'Submitting...' : 'Submit'}
               </button>
