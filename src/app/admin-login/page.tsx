@@ -1,17 +1,16 @@
 // app/admin-login/page.tsx
 import AdminLoginForm from "./AdminLoginForm";
 
-export default function AdminLoginPage({
+export default async function AdminLoginPage({
   searchParams,
 }: {
-  searchParams?: Record<string, string | string[] | undefined>;
+  searchParams: Promise<{ error?: string; info?: string; next?: string }>;
 }) {
-  const pick = (v: string | string[] | undefined) =>
-    Array.isArray(v) ? v[0] : v ?? "";
+  const sp = await searchParams;
 
-  const error = pick(searchParams?.error);
-  const info = pick(searchParams?.info);
-  const nextUrl = pick(searchParams?.next) || "/admin/packages";
+  const error = sp?.error ?? "";
+  const info = sp?.info ?? "";
+  const nextUrl = sp?.next ?? "/admin/packages";
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-6 bg-[#F6FAFD]">
