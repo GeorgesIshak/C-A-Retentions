@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { getTenantProfile } from "@/lib/actions/tenant";
 import { getMessageTemplate } from "@/lib/actions/subscription"; // ← IMPORT
 import ChangePasswordForm from "@/components/ChangePasswordForm";

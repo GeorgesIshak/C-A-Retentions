@@ -4,11 +4,14 @@ import AdminLoginForm from "./AdminLoginForm";
 export default function AdminLoginPage({
   searchParams,
 }: {
-  searchParams: { error?: string; info?: string; next?: string };
+  searchParams?: Record<string, string | string[] | undefined>;
 }) {
-  const error = searchParams?.error ?? "";
-  const info = searchParams?.info ?? "";
-  const nextUrl = searchParams?.next ?? "/admin/packages";
+  const pick = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v ?? "";
+
+  const error = pick(searchParams?.error);
+  const info = pick(searchParams?.info);
+  const nextUrl = pick(searchParams?.next) || "/admin/packages";
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-6 bg-[#F6FAFD]">

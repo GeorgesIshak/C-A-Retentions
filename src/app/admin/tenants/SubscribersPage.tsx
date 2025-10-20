@@ -2,11 +2,9 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
-import { logout } from '@/lib/actions/auth';
 import type { SubscriberRow } from './page';
 
 export default function SubscribersPage({
-  userId,
   initialRows,
 }: {
   userId: string | null;
