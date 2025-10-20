@@ -1,13 +1,19 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// app/api/billing-portal/route.ts
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const API_URL = process.env.BACKEND_API_URL!;
-if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
+export const runtime = 'nodejs';
+export const dynamic = 'force-dynamic';
 
 export async function POST() {
   try {
+    const API_URL = process.env.BACKEND_API_URL;
+    if (!API_URL) {
+      console.error('BACKEND_API_URL is not set in the deployment env');
+      return NextResponse.json({ error: 'Server misconfigured: BACKEND_API_URL not set' }, { status: 500 });
+    }
+
+    // ✅ Works in both edge (await required) and node (TS still happy)
     const token = (await cookies()).get('accessToken')?.value;
     if (!token) {
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
@@ -27,8 +33,9 @@ export async function POST() {
       );
     }
 
-    const data = await resp.json().catch(() => ({}));
+    const data: any = await resp.json().catch(() => ({}));
     const url = data?.url;
+
     if (!url) {
       return NextResponse.json({ error: 'Backend returned no portal URL' }, { status: 500 });
     }
