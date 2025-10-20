@@ -3,8 +3,12 @@
 
 import { cookies } from 'next/headers';
 
-const API_URL = process.env.BACKEND_API_URL!;
-if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
+/** Read inside functions; don't throw at module import time */
+function requireApiUrl() {
+  const url = process.env.BACKEND_API_URL;
+  if (!url) throw new Error('BACKEND_API_URL is not configured');
+  return url;
+}
 
 // ---------------------------------------
 // Check if user has an active plan
@@ -12,6 +16,8 @@ if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
 export async function hasActivePlan(): Promise<boolean> {
   const token = (await cookies()).get('accessToken')?.value;
   if (!token) return false;
+
+  const API_URL = requireApiUrl();
 
   const res = await fetch(`${API_URL}/users/profile`, {
     method: 'GET',
@@ -25,6 +31,7 @@ export async function hasActivePlan(): Promise<boolean> {
   const expiry = p?.expiryDate ? new Date(p.expiryDate) : null;
   return !!expiry && expiry.getTime() > Date.now();
 }
+
 // ---------------------------------------
 // Message Template: types
 // ---------------------------------------
@@ -50,6 +57,7 @@ async function authHeaders() {
 // GET /users/message-template
 // ---------------------------------------
 export async function getMessageTemplate(): Promise<MessageTemplate> {
+  const API_URL = requireApiUrl();
   const res = await fetch(`${API_URL}/users/message-template`, {
     method: 'GET',
     headers: await authHeaders(),
@@ -64,14 +72,16 @@ export async function getMessageTemplate(): Promise<MessageTemplate> {
 
 // ---------------------------------------
 // PUT /users/message-template
-// (send only the parts you want to update)
 // ---------------------------------------
 export async function updateMessageTemplate(input: {
   smsTemplate?: Partial<SmsTemplate> | null;
   emailTemplate?: Partial<EmailTemplate> | null;
 }): Promise<MessageTemplate> {
+  const API_URL = requireApiUrl();
+
   const body: Record<string, unknown> = {};
-  if (input.smsTemplate) body.smsTemplate = { content: input.smsTemplate.content ?? '' };
+  if (input.smsTemplate)
+    body.smsTemplate = { content: input.smsTemplate.content ?? '' };
   if (input.emailTemplate)
     body.emailTemplate = {
       subject: input.emailTemplate.subject ?? '',
@@ -91,17 +101,23 @@ export async function updateMessageTemplate(input: {
   return res.json();
 }
 
-// ---------------------------------------
+// ------// ---------------------------------------
 // POST /users/send-message  (schedule SMS/Email)
-// type: "send-message" | "send-email"
-// date: Date or ISO string (UTC will be sent)
 // ---------------------------------------
 export type FrontendMessageType = 'send-message' | 'send-email';
+
 export async function sendMessage(payload: {
   clientId: string;
-  type: FrontendMessageType;
+  type: FrontendMessageType;           // 'send-message' | 'send-email'
   date?: Date | string;
+  /** optional: override default template on this send */
+  template?: {
+    smsTemplate?: SmsTemplate;
+    emailTemplate?: EmailTemplate;
+  };
 }) {
+  const API_URL = requireApiUrl();
+
   const token = (await cookies()).get('accessToken')?.value;
   if (!token) throw new Error('No access token found');
 
@@ -120,17 +136,24 @@ export async function sendMessage(payload: {
     },
     body: JSON.stringify({
       clientId: payload.clientId,
-      type: payload.type, // "send-message" (SMS) | "send-email" (Email)
+      type: payload.type,               // ← send as-is: 'send-message' | 'send-email'
       date: utcDate,
+      template: payload.template,       // optional override
     }),
     cache: 'no-store',
   });
 
   if (!res.ok) {
-    const err = await res.text();
-    throw new Error(err || 'Failed to create message job');
+    const text = await res.text().catch(() => '');
+    throw new Error(text || 'Failed to create message job');
   }
 
-  // Backend returns plain text (201 Created), return it for UI toast
+  try {
+    const ct = res.headers.get('content-type') || '';
+    if (ct.includes('application/json')) {
+      const j = await res.json();
+      return typeof j === 'string' ? j : JSON.stringify(j);
+    }
+  } catch {}
   return res.text();
 }
