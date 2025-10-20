@@ -1,11 +1,20 @@
 import Image from "next/image";
 import Link from "next/link";
+import { getCurrentUserFromToken } from "@/lib/actions/auth"; // <-- you already have this
 
-export default function SiteHeader() {
+export default async function SiteHeader() {
+  // Check if user is logged in (server-side)
+  const user = await getCurrentUserFromToken();
+  const isLoggedIn = Boolean(user);
+
+  // Dynamic link target
+  const targetHref = isLoggedIn ? "/dashboard/profile" : "/login";
+
   return (
     <header className="mx-auto max-w-7xl border-b border-[#BDC4D4]">
-      <div className="mx-auto max-w-7xl  py-10 flex items-center justify-between">
-        <Link href="/" className="flex items-center">
+      <div className="mx-auto max-w-7xl py-10 flex items-center justify-between">
+        {/* Logo */}
+        <Link href="/dashboard/">
           <Image
             src="/images/logo.svg"
             alt="C&A Retentions"
@@ -15,7 +24,8 @@ export default function SiteHeader() {
           />
         </Link>
 
-        <Link href="/signup" aria-label="Sign up">
+        {/* Dynamic Login/Profile link */}
+        <Link href={targetHref} aria-label={isLoggedIn ? "Profile" : "Login"}>
           <Image
             src="/images/user.svg"
             alt="User Icon"

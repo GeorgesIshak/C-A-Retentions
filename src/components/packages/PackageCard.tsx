@@ -32,11 +32,14 @@ export default function PackageCard({
   ctaLabel = "Proceed",
 }: Props) {
 
-  function onCtaClick(e: MouseEvent<HTMLButtonElement>) {
-    e.stopPropagation();
-    // Pure UI: let parent handle the action
-    onProceed?.();
-  }
+function onCtaClick(e: MouseEvent<HTMLButtonElement>) {
+  e.stopPropagation();
+  // ❌ remove this line so the parent handler runs:
+  // if (ctaLabel.toLowerCase().includes("already")) return;
+
+  onProceed?.(); // ✅ always call parent; it decides what to do
+}
+
 
   return (
     <div

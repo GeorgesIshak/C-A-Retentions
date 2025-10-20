@@ -21,3 +21,9 @@ p {
   font-size: 14px;
   color: #52677D;
 }
+
+
+/* globals.css */
+.input {
+  @apply w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7];
+}

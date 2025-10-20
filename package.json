@@ -10,10 +10,12 @@
   },
   "dependencies": {
     "jsonwebtoken": "^9.0.2",
+    "lucide-react": "^0.546.0",
     "next": "15.5.4",
     "qrcode.react": "^4.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-hot-toast": "^2.6.0",
     "zod": "^4.1.11"
   },
   "devDependencies": {

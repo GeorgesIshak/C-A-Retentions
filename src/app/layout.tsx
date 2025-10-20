@@ -1,5 +1,6 @@
 import "./globals.css";
 import type { Metadata } from "next";
+import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
   title: "C&A Retentions",
@@ -11,6 +12,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en">
       <body className="bg-white text-gray-800 antialiased">
         {children}
+                <Toaster position="top-center" toastOptions={{ duration: 3000 }} />
+
       </body>
     </html>
   );

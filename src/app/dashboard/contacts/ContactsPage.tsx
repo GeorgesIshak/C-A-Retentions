@@ -1,9 +1,12 @@
-// app/dashboard/contacts/ContactsPage.tsx  (your current file)
-'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// app/dashboard/contacts/ContactsPage.tsx
+"use client";
 
-import React, { useMemo, useState } from 'react';
-import QrModal from '@/components/qr/QrModal';
-import { logout } from '@/lib/actions/auth';
+import React, { useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import QrModal from "@/components/qr/QrModal";
+import { logout } from "@/lib/actions/auth";
+import { sendMessage } from "@/lib/actions/subscription";
 
 type Contact = {
   id: string;
@@ -14,32 +17,45 @@ type Contact = {
   templateId?: string | null;
 };
 
-const TEMPLATES = [
-  { id: 'sms-welcome', label: 'SMS — Welcome' },
-  { id: 'sms-thanks',  label: 'SMS — Thanks for visiting' },
-  { id: 'email-promo', label: 'Email — Promo 10% off' },
-];
-
 export default function ContactsPage({
   userId,
   initialRows,
 }: {
   userId: string | null;
-  initialRows: Contact[];   // ✅ new prop
+  initialRows: Contact[];
 }) {
-  const [rows, setRows] = useState<Contact[]>(initialRows); // ✅ seed from server
-  const [qrOpen, setQrOpen] = useState(false);
+  const [rows] = useState<Contact[]>(initialRows);
 
+  const router = useRouter();
+  const sp = useSearchParams();
+
+  // Read modal state from URL (?configure=<contactId>)
+  const configureId = sp.get("configure"); // string | null
+  const cfgOpen = Boolean(configureId);
+
+  const [qrOpen, setQrOpen] = useState(false);
   const isLoggedIn = Boolean(userId);
 
   const qrUrl = useMemo(() => {
-    if (typeof window === 'undefined' || !userId) return '';
+    if (typeof window === "undefined" || !userId) return "";
     const origin = window.location.origin;
     return `${origin}/guest-form?uid=${encodeURIComponent(userId)}`;
   }, [userId]);
 
+  function openConfigure(c: Contact) {
+    const params = new URLSearchParams(sp.toString());
+    params.set("configure", c.id);
+    router.push(`?${params.toString()}`, { scroll: false });
+  }
+
+  function closeConfigure() {
+    const params = new URLSearchParams(sp.toString());
+    params.delete("configure");
+    router.push(`?${params.toString()}`, { scroll: false });
+  }
+
   return (
-    <main className="mx-auto max-w-7xl ">
+    <main className="mx-auto max-w-7xl">
       {/* Logout */}
       <div className="mb-2 flex justify-end">
         <form action={logout}>
@@ -57,10 +73,10 @@ export default function ContactsPage({
         <h1 className="text-[28px] font-bold text-[#0F1F33] mb-6">Contacts</h1>
         <div className="px-5 py-6 flex justify-end">
           <button
-            onClick={() => (isLoggedIn ? setQrOpen(true) : alert('Please log in first'))}
+            onClick={() => (isLoggedIn ? setQrOpen(true) : alert("Please log in first"))}
             className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white shadow hover:opacity-95 disabled:opacity-50"
             disabled={!isLoggedIn}
-            title={isLoggedIn ? 'Generate QR Code' : 'Login required to generate QR'}
+            title={isLoggedIn ? "Generate QR Code" : "Login required to generate QR"}
           >
             Generate QR Code
           </button>
@@ -69,12 +85,11 @@ export default function ContactsPage({
 
       {/* Header */}
       <div className="rounded-2xl bg-[#F1F6FA] px-5 py-3 text-[#22384F] font-semibold text-[12px] uppercase tracking-wide">
-        <div className="grid grid-cols-6">
+        <div className="grid grid-cols-5">
           <div>Date Added</div>
           <div>Full Name</div>
           <div>Email</div>
           <div>Phone Number</div>
-          <div>Select Message Template</div>
           <div className="text-right">Action</div>
         </div>
       </div>
@@ -90,24 +105,23 @@ export default function ContactsPage({
       ) : (
         <ul className="mt-3 space-y-3">
           {rows.map((c) => (
-            <li key={c.id} className="rounded-[14px] border border-[#E6EEF5] bg-white shadow-[0_1px_0_0_rgba(16,24,40,0.02)]">
-              <div className="grid grid-cols-6 items-center px-5 py-4 text-[14px] text-[#0F1F33]">
-                <div className="text-[#6B7C8F]">{new Date(c.createdAt).toLocaleDateString('en-GB')}</div>
+            <li
+              key={c.id}
+              className="rounded-[14px] border border-[#E6EEF5] bg-white shadow-[0_1px_0_0_rgba(16,24,40,0.02)]"
+            >
+              <div className="grid grid-cols-5 items-center px-5 py-4 text-[14px] text-[#0F1F33]">
+                <div className="text-[#6B7C8F]">
+                  {new Date(c.createdAt).toLocaleDateString("en-GB")}
+                </div>
                 <div>{c.fullName}</div>
                 <div className="text-[#2F4B6A]">{c.email}</div>
                 <div className="text-[#2F4B6A]">{c.phone}</div>
 
-                <div className="min-w-0">
-                  <TemplateSelect
-                    value={c.templateId ?? ''}
-                    onChange={(tpl) =>
-                      setRows((prev) => prev.map((r) => (r.id === c.id ? { ...r, templateId: tpl || null } : r)))
-                    }
-                  />
-                </div>
-
                 <div className="flex justify-end">
-                  <button className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white hover:opacity-95">
+                  <button
+                    onClick={() => openConfigure(c)}
+                    className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white hover:opacity-95"
+                  >
                     Configure Message
                   </button>
                 </div>
@@ -118,44 +132,173 @@ export default function ContactsPage({
       )}
 
       <QrModal open={qrOpen} onClose={() => setQrOpen(false)} url={qrUrl} />
+
+      {/* URL-driven Configure Message Modal */}
+      <ConfigureMessageModal
+        open={cfgOpen}
+        onClose={closeConfigure}
+        contactId={configureId}
+      />
     </main>
   );
 }
 
-function TemplateSelect({
-  value,
-  onChange,
-}: {
-  value: string;
-  onChange: (v: string) => void;
-}) {
-  return (
-    <div className="flex items-center gap-3">
-      <select
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[#D6E3EE] bg-white px-3 py-2 text-sm outline-none focus:border-[#3D6984]"
-      >
-        <option value="">Select a template…</option>
-        {TEMPLATES.map((t) => (
-          <option key={t.id} value={t.id}>
-            {t.label}
-          </option>
-        ))}
-      </select>
+/* -------------------- Modal Component -------------------- */
 
-      <svg
-        viewBox="0 0 24 24"
-        className="h-4 w-4 shrink-0 text-[#2F4B6A]"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="2"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      >
-        <path d="M12 15.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7Z" />
-        <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09a1.65 1.65 0 0 0-1-1.51 1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 5 15.4a1.65 1.65 0 0 0-1.51-1H3.4a2 2 0 1 1 0-4h.09a1.65 1.65 0 0 0 1.51-1 1.65 1.65 0 0 0-.33-1.82c.25.61.85 1 1.51 1h.09a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" />
-      </svg>
+function ConfigureMessageModal({
+  open,
+  onClose,
+  contactId,
+}: {
+  open: boolean;
+  onClose: () => void;
+  contactId: string | null;
+}) {
+  const [date, setDate] = useState<string>(""); // yyyy-mm-dd
+  const [time, setTime] = useState<string>(""); // HH:MM
+  const [type, setType] = useState<"send-message" | "send-email">("send-message");
+  const [pending, setPending] = useState(false);
+  const [notice, setNotice] = useState<{ kind: "ok" | "err"; msg: string } | null>(null);
+
+  React.useEffect(() => {
+    if (open) {
+      setNotice(null);
+      setPending(false);
+      setDate("");
+      setTime("");
+      setType("send-message");
+    }
+  }, [open, contactId]);
+
+  if (!open || !contactId) return null;
+
+  function combineDateTimeLocal(d: string, t: string): Date | null {
+    if (!d || !t) return null;
+    const [y, m, day] = d.split("-").map(Number);
+    const [hh, mm] = t.split(":").map(Number);
+    return new Date(y, (m ?? 1) - 1, day ?? 1, hh ?? 0, mm ?? 0, 0, 0);
+  }
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setNotice(null);
+
+    if (!contactId) {
+      setNotice({ kind: "err", msg: "No contact selected." });
+      return;
+    }
+
+    const when = combineDateTimeLocal(date, time);
+    if (!when) {
+      setNotice({ kind: "err", msg: "Please select both date and time." });
+      return;
+    }
+
+    try {
+      setPending(true);
+      await sendMessage({
+        clientId: contactId,    // ← always defined here
+        type,
+        date: when,             // server action converts to UTC ISO
+      });
+      setNotice({ kind: "ok", msg: "Scheduled successfully." });
+      setTimeout(onClose, 900);
+    } catch (err: any) {
+      setNotice({
+        kind: "err",
+        msg: err?.message || "Failed to schedule. Please try again.",
+      });
+    } finally {
+      setPending(false);
+    }
+  }
+
+  const canSubmit = !!date && !!time && !!contactId && !pending;
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold">Configure Message</h3>
+          <button
+            onClick={onClose}
+            className="rounded-md border border-[#E6EEF5] px-2 py-1 text-sm"
+            aria-label="Close"
+          >
+            ✕
+          </button>
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1F33]">Date</label>
+            <input
+              type="date"
+              value={date}
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full rounded-xl border border-[#E6EEF5] p-2 text-sm text-[#0F1F33]"
+              required
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1F33]">Time</label>
+            <input
+              type="time"
+              value={time}
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full rounded-xl border border-[#E6EEF5] p-2 text-sm text-[#0F1F33]"
+              required
+            />
+          </div>
+
+          <div>
+            <div className="mb-1 text-sm font-medium text-[#0F1F33]">Message</div>
+            <div className="flex items-center gap-6">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="msgtype"
+                  checked={type === "send-message"}
+                  onChange={() => setType("send-message")}
+                />
+                SMS
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="msgtype"
+                  checked={type === "send-email"}
+                  onChange={() => setType("send-email")}
+                />
+                Email
+              </label>
+            </div>
+          </div>
+
+          {notice && (
+            <div
+              className={`rounded-md border p-3 text-sm ${
+                notice.kind === "ok"
+                  ? "border-[#CFE4FF] bg-[#F1F8FF] text-[#0B3A75]"
+                  : "border-[#FFE0E0] bg-[#FFF7F7] text-[#9A3A3A]"
+              }`}
+            >
+              {notice.msg}
+            </div>
+          )}
+
+          <div className="pt-2">
+            <button
+              type="submit"
+              disabled={!canSubmit}
+              className="w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 text-white text-sm disabled:opacity-60"
+            >
+              {pending ? "Submitting…" : "Submit"}
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
   );
 }

@@ -1,12 +1,13 @@
-export interface Package {
+export type Package = {
   id: string;
   name: string;
+  description: string | null;
   durationDays: number;
   smsCount: number;
   emailCount: number;
-  price: number;
-  description?: string;
+  price: number;           // keep as number client-side
   isActive: boolean;
-  createdAt?: string;
-  updatedAt?: string;
-}
+  createdAt: string;       // ISO
+  updatedAt: string;       // ISO
+  priceId: string | null;  // NEW
+};

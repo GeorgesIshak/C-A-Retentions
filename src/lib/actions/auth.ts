@@ -4,6 +4,7 @@
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import jwt from "jsonwebtoken";
+export type ChangePwState = { ok: boolean; message?: string | null };
 
 
 import {
@@ -13,6 +14,7 @@ import {
   forgotPasswordSchema,
   resetPasswordSchema,
   resendOtpSchema,
+  changePasswordFormSchema,
 } from '@/lib/schema';
 
 const API_URL = process.env.BACKEND_API_URL!;
@@ -33,13 +35,18 @@ async function readErr(res: Response, fallback: string) {
     return fallback;
   }
 }
-
 /** LOGIN */
 export async function login(formData: FormData) {
   const parsed = loginSchema.safeParse(Object.fromEntries(formData.entries()));
+  const nextUrl = String(formData.get('next') ?? '');
+
   if (!parsed.success) {
-    redirect('/login?error=' + encodeURIComponent('Validation failed. Please check your credentials.'));
+    const qs = new URLSearchParams();
+    qs.set('error', 'Validation failed. Please check your credentials.');
+    if (nextUrl) qs.set('next', nextUrl);
+    redirect(`/login?${qs.toString()}`);
   }
+
   const { email, password } = parsed.data;
 
   const res = await fetch(`${API_URL}/auth/login`, {
@@ -51,7 +58,10 @@ export async function login(formData: FormData) {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Login failed. Please check your credentials.');
-    redirect('/login?error=' + encodeURIComponent(msg));
+    const qs = new URLSearchParams();
+    qs.set('error', msg);
+    if (nextUrl) qs.set('next', nextUrl);
+    redirect(`/login?${qs.toString()}`);
   }
 
   const { accessToken, refreshToken } = await res.json();
@@ -72,32 +82,44 @@ export async function login(formData: FormData) {
     maxAge: 60 * 60 * 24 * 7,
   });
 
-  redirect('/dashboard/');
+  // Hard gate: if the user clicked a plan before login, honor it; else go to plans (/)
+  if (nextUrl) redirect(nextUrl);
+  redirect('/'); // default to plans page, not dashboard
 }
+
 
 /** SIGNUP → redirect to /verifyemail with the user's email */
 export async function signup(formData: FormData) {
   const parsed = signupSchema.safeParse(Object.fromEntries(formData.entries()));
   if (!parsed.success) {
-    redirect('/register?error=' + encodeURIComponent('Validation failed. Please check your inputs.'));
+    const first =
+      parsed.error.issues?.[0]?.message ||
+      parsed.error.flatten().formErrors?.[0] ||
+      "Validation failed. Please check your inputs.";
+    redirect("/register?error=" + encodeURIComponent(first));
   }
-  const { email, password } = parsed.data;
+
+  const { email, password, fullName, phoneNumber } = parsed.data;
+
+  const payload: Record<string, unknown> = { email, password };
+  if (fullName !== undefined) payload.fullName = fullName ?? null;      // include if you want
+  if (phoneNumber !== undefined) payload.phoneNumber = phoneNumber ?? null;
 
   const res = await fetch(`${API_URL}/auth/signup`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-    cache: 'no-store',
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    cache: "no-store",
+    body: JSON.stringify(payload),
   });
 
   if (!res.ok) {
-    const msg = await readErr(res, 'Signup failed. Please try again.');
-    redirect('/register?error=' + encodeURIComponent(msg));
+    const msg = await readErr(res, "Signup failed. Please try again.");
+    redirect("/register?error=" + encodeURIComponent(msg));
   }
 
-  // success → go to /verifyemail with the email prefilled
   redirect(`/verifyemail?email=${encodeURIComponent(email)}`);
 }
+
 
 /** VERIFY EMAIL → set cookies → dashboard */
 export async function verifyEmail(formData: FormData) {
@@ -285,3 +307,137 @@ export async function getCurrentUserFromToken(): Promise<{ id: string } | null> 
   }
 }
 
+// --- tiny helpers ---
+export async function getAccessToken() {
+  return (await cookies()).get('accessToken')?.value ?? null;
+}
+export async function getRefreshToken() {
+  return (await cookies()).get('refreshToken')?.value ?? null;
+}
+export async function setAccessToken(token: string | null) {
+  const jar = await cookies();
+  if (!token) jar.delete('accessToken');
+  else jar.set('accessToken', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false, // set true in production under HTTPS
+    path: '/',
+  });
+}
+export async function setRefreshToken(token: string | null) {
+  const jar = await cookies();
+  if (!token) jar.delete('refreshToken');
+  else jar.set('refreshToken', token, {
+    httpOnly: true,
+    sameSite: 'lax',
+    secure: false, // set true in production under HTTPS
+    path: '/',
+  });
+}
+
+/**
+ * Calls your backend POST /auth/refresh-token with the refreshToken from cookie.
+ * Expects body like: { accessToken: string, refreshToken?: string }
+ * Returns the new access token (or null if refresh failed).
+ */
+export async function refreshAccessToken(): Promise<string | null> {
+  const rt = await getRefreshToken();
+  if (!rt) return null;
+
+  try {
+    const r = await fetch(`${API_URL}/auth/refresh-token`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      // your backend expects the token in JSON body (per your screenshot)
+      body: JSON.stringify({ refreshToken: rt }),
+      cache: 'no-store',
+    });
+
+    if (!r.ok) return null;
+
+    const data = (await r.json()) as { accessToken?: string; refreshToken?: string };
+
+    if (data.accessToken) await setAccessToken(data.accessToken);
+    if (data.refreshToken) await setRefreshToken(data.refreshToken); // if the backend rotates it
+
+    return data.accessToken ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * fetchWithAuth — adds Authorization automatically and retries once on 401 by calling refreshAccessToken().
+ * Use this from server actions and Next API routes when calling your backend.
+ */
+export async function fetchWithAuth(input: string, init: RequestInit = {}) {
+  // 1) try with current access token
+  const t1 = await getAccessToken();
+  let res = await fetch(input, {
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      ...(t1 ? { Authorization: `Bearer ${t1}` } : {}),
+    },
+    cache: init.cache ?? 'no-store',
+  });
+
+  // 2) if expired, refresh once then retry
+  if (res.status === 401) {
+    const newToken = await refreshAccessToken();
+    if (!newToken) return res; // still 401 — caller decides (usually redirect to /login)
+
+    res = await fetch(input, {
+      ...init,
+      headers: {
+        ...(init.headers || {}),
+        Authorization: `Bearer ${newToken}`,
+      },
+      cache: init.cache ?? 'no-store',
+    });
+  }
+
+  return res;
+}
+
+
+export async function changePasswordAction(
+  _prev: ChangePwState,
+  formData: FormData
+): Promise<ChangePwState> {
+  const parsed = changePasswordFormSchema.safeParse(Object.fromEntries(formData.entries()));
+  if (!parsed.success) {
+    const first =
+      parsed.error.issues?.[0]?.message ||
+      parsed.error.flatten().formErrors?.[0] ||
+      "Please check your inputs.";
+    return { ok: false, message: first };
+  }
+
+  const { currentPassword, newPassword } = parsed.data;
+
+  try {
+    const res = await fetchWithAuth(`${API_URL}/auth/change-password`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      cache: "no-store",
+      body: JSON.stringify({ currentPassword, newPassword }),
+    });
+
+    if (!res.ok) {
+      let msg = "Failed to change password.";
+      try {
+        const j = await res.json();
+        msg = j?.message || j?.error || msg;
+      } catch {
+        const t = await res.text().catch(() => "");
+        if (t) msg = t;
+      }
+      return { ok: false, message: msg };
+    }
+
+    return { ok: true, message: "Password updated successfully." };
+  } catch (e: any) {
+    return { ok: false, message: e?.message || "Unexpected error." };
+  }
+}

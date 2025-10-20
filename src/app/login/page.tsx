@@ -1,55 +1,17 @@
-// app/(auth)/login/page.tsx
-'use client';
+import LoginForm from "./LoginForm";
 
-import { useEffect, useState } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
-import { useFormStatus } from 'react-dom';
-import { login } from '@/lib/actions/auth';
-
-function SubmitButton() {
-  const { pending } = useFormStatus();
+export default function LoginPage({
+  searchParams,
+}: { searchParams: { error?: string; success?: string; next?: string } }) {
+  const { error = "", success = "", next = "" } = searchParams ?? {};
   return (
-    <button
-      type="submit"
-      disabled={pending}
-      className="mt-6 w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 text-white font-medium hover:opacity-95 transition disabled:opacity-50"
-    >
-      {pending ? 'Signing in…' : 'Sign In'}
-    </button>
-  );
-}
+    <main className="min-h-dvh flex items-center justify-center p-6 bg-[#F6FAFD]">
+      <div className="w-full max-w-sm rounded-2xl bg-white p-8 shadow-xl border border-[#E6EEF5]">
+        <h1 className="text-2xl font-semibold mb-6 text-center text-[#1C2E4A]">Sign In</h1>
 
-export default function LoginPage() {
-  const sp = useSearchParams();
-  const router = useRouter();
-
-  const error = sp.get('error');
-  const success = sp.get('success'); // from logout/reset
-  const nextUrl = sp.get('next') || '';
-
-  // Show the success banner once, then clean the URL
-  const [banner, setBanner] = useState<string | null>(null);
-  useEffect(() => {
-    if (!success) return;
-    setBanner(success);
-    const cleanPath = '/login' + (nextUrl ? `?next=${encodeURIComponent(nextUrl)}` : '');
-    router.replace(cleanPath, { scroll: false }); // remove ?success from URL
-  }, [success, nextUrl, router]);
-
-  return (
-    <main className="min-h-dvh flex items-center justify-center p-6">
-      <form
-        action={login}
-        className="w-full max-w-sm rounded-2xl bg-white/90 p-8 backdrop-blur-xl shadow-xl border border-white/10"
-      >
-        <h1 className="text-center text-[#1C2E4A] text-2xl font-semibold mb-6">
-          Sign In
-        </h1>
-
-        {/* Success or Error banners */}
-        {banner && (
+        {success && (
           <div className="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-            {banner}
+            {success}
           </div>
         )}
         {error && (
@@ -58,56 +20,8 @@ export default function LoginPage() {
           </div>
         )}
 
-        {/* keep intended redirect from middleware */}
-        <input type="hidden" name="next" value={nextUrl} />
-
-        <div className="space-y-5">
-          <label className="block">
-            <span className="text-[#1C2E4A] text-sm font-semibold">Email</span>
-            <input
-              type="email"
-              name="email"
-              autoComplete="email"
-              className="mt-1 w-full rounded-full border border-[#3D6984]/30 bg-white p-2.5 text-[#1C2E4A] text-[14px] placeholder-gray-400 outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#3D6984]/50 transition"
-              placeholder="Enter email"
-              required
-            />
-          </label>
-
-          <label className="block">
-            <span className="text-[#1C2E4A] text-sm font-semibold">
-              Password
-            </span>
-            <input
-              type="password"
-              name="password"
-              autoComplete="current-password"
-              className="mt-1 w-full rounded-full border border-[#3D6984]/30 bg-white p-2.5 text-[#1C2E4A] text-[14px] placeholder-gray-400 outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#3D6984]/50 transition"
-              placeholder="Enter password"
-              required
-            />
-          </label>
-
-          {/* Forgot Password link */}
-          <div className="text-right">
-            <a
-              href="/forgot"
-              className="text-sm text-[#1C2E4A]/70 hover:text-[#3D6984] underline"
-            >
-              Forgot password?
-            </a>
-          </div>
-        </div>
-
-        <SubmitButton />
-
-        <p className="mt-4 text-center text-sm text-[#1C2E4A]/70">
-          Don’t have an account?{' '}
-          <a href="/register" className="underline hover:text-[#3D6984]">
-            Create one
-          </a>
-        </p>
-      </form>
+        <LoginForm nextUrl={next} />
+      </div>
     </main>
   );
 }
