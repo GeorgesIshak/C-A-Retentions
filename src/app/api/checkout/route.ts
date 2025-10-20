@@ -1,14 +1,14 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // app/api/checkout/route.ts
 import { NextResponse } from 'next/server';
-import { fetchWithAuth } from '@/lib/actions/auth';
+import { cookies } from 'next/headers';
 
 export const runtime = 'nodejs';        // ensure Node runtime (not Edge)
 export const dynamic = 'force-dynamic'; // avoid static evaluation
 
 export async function POST(req: Request) {
   try {
-    // Read env at runtime (not module top-level)
+    // Read env at runtime
     const API_URL = process.env.BACKEND_API_URL;
     if (!API_URL) {
       console.error('BACKEND_API_URL is not set in the deployment env');
@@ -18,35 +18,32 @@ export async function POST(req: Request) {
       );
     }
 
-    // Safely parse body (req.json() can throw)
+    // Parse JSON body safely
     let body: any;
     try {
       body = await req.json();
     } catch {
-      return NextResponse.json(
-        { error: 'Invalid JSON body' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
     }
 
     const { priceId } = body ?? {};
     if (!priceId || typeof priceId !== 'string') {
-      return NextResponse.json(
-        { error: 'priceId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'priceId is required' }, { status: 400 });
     }
 
-    // Use fetchWithAuth — should add auth header & refresh if needed
-    const resp = await fetchWithAuth(`${API_URL}/payment/checkout-sessions`, {
+    // Read access token from cookies (await form works in Edge/Node typings)
+    const token = (await cookies()).get('accessToken')?.value;
+
+    const headers = new Headers({ 'Content-Type': 'application/json' });
+    if (token) headers.set('Authorization', `Bearer ${token}`);
+
+    const resp = await fetch(`${API_URL}/payment/checkout-sessions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify({ priceId }),
-      // no-store avoids any caching weirdness
       cache: 'no-store',
     });
 
-    // If refresh failed and backend still returns 401
     if (resp.status === 401) {
       return NextResponse.json(
         { error: 'Session expired. Please log in again.' },
