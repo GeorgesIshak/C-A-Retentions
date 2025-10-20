@@ -1,11 +1,15 @@
 // app/guest-form/page.tsx
 import GuestFormClient from './GuestForm';
 
-type SearchParams = { [key: string]: string | string[] | undefined };
+export const dynamic = 'force-dynamic'; // avoid prerender errors
 
-export default function Page({ searchParams }: { searchParams: SearchParams }) {
-  const raw = searchParams?.uid;
-  const uid = Array.isArray(raw) ? raw[0] ?? '' : raw ?? '';
+type SearchParams = Record<string, string | string[] | undefined>;
+
+export default function Page(props: { searchParams?: SearchParams }) {
+  const sp = props.searchParams ?? {};
+  const raw = sp.uid;
+  const uid =
+    typeof raw === 'string' ? raw : Array.isArray(raw) ? raw[0] ?? '' : '';
 
   return <GuestFormClient uid={uid} />;
 }
