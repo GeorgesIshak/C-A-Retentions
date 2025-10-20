@@ -1,11 +1,17 @@
 import ResetForm from "./ResetForm";
 
-export default function ResetPage({
+export default async function ResetPage({
   searchParams,
 }: {
-  searchParams: { error?: string; info?: string; email?: string };
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const { error = "", info = "", email = "" } = searchParams ?? {};
+  const sp = await searchParams;
+  const pick = (v: string | string[] | undefined) =>
+    Array.isArray(v) ? v[0] : v ?? "";
+
+  const error = pick(sp.error);
+  const info = pick(sp.info);
+  const email = pick(sp.email);
 
   return (
     <main className="min-h-dvh flex items-center justify-center p-6 bg-[#F6FAFD]">
