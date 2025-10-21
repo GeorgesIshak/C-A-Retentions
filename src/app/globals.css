@@ -27,3 +27,17 @@ p {
 .input {
   @apply w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7];
 }
+
+/* app/globals.css (or wherever you keep global styles) */
+@keyframes bob {
+  0%, 100% { transform: translateY(0) }
+  50% { transform: translateY(-6px) }
+}
+@keyframes bob-delayed {
+  0%   { transform: translateY(0) }
+  25%  { transform: translateY(-6px) }
+  75%  { transform: translateY(0) }
+  100% { transform: translateY(-6px) }
+}
+.animate-bob { animation: bob 3.6s ease-in-out infinite; }
+.animate-bob-delayed { animation: bob-delayed 4.2s ease-in-out infinite; }

@@ -84,7 +84,7 @@ export default function ContactsPage({
       </div>
 
       {/* Header */}
-      <div className="rounded-2xl bg-[#F1F6FA] px-5 py-3 text-[#22384F] font-semibold text-[12px] uppercase tracking-wide">
+<div className="hidden md:block rounded-2xl bg-[#F1F6FA] px-5 py-3 text-[#22384F] font-semibold text-[12px] uppercase tracking-wide">
         <div className="grid grid-cols-5">
           <div>Date Added</div>
           <div>Full Name</div>
@@ -105,28 +105,57 @@ export default function ContactsPage({
       ) : (
         <ul className="mt-3 space-y-3">
           {rows.map((c) => (
-            <li
-              key={c.id}
-              className="rounded-[14px] border border-[#E6EEF5] bg-white shadow-[0_1px_0_0_rgba(16,24,40,0.02)]"
-            >
-              <div className="grid grid-cols-5 items-center px-5 py-4 text-[14px] text-[#0F1F33]">
-                <div className="text-[#6B7C8F]">
-                  {new Date(c.createdAt).toLocaleDateString("en-GB")}
-                </div>
-                <div>{c.fullName}</div>
-                <div className="text-[#2F4B6A]">{c.email}</div>
-                <div className="text-[#2F4B6A]">{c.phone}</div>
+       <li
+  key={c.id}
+  className="rounded-[14px] border border-[#E6EEF5] bg-white shadow-[0_1px_0_0_rgba(16,24,40,0.02)]"
+>
+  {/* Mobile card */}
+  <div className="md:hidden px-4 py-4 space-y-3">
+    <div className="flex items-start justify-between gap-4">
+      <div className="text-[#0F1F33]">
+        <div className="font-medium">{c.fullName || '—'}</div>
+        <div className="text-xs text-[#6B7C8F]">
+          {new Date(c.createdAt).toLocaleDateString('en-GB')}
+        </div>
+      </div>
+      <button
+        onClick={() => openConfigure(c)}
+        className="shrink-0 rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-3 py-1.5 text-xs text-white"
+      >
+        Configure
+      </button>
+    </div>
 
-                <div className="flex justify-end">
-                  <button
-                    onClick={() => openConfigure(c)}
-                    className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white hover:opacity-95"
-                  >
-                    Configure Message
-                  </button>
-                </div>
-              </div>
-            </li>
+    <div className="text-[13px]">
+      <div className="text-[#6B7C8F]">Email</div>
+      <div className="break-words text-[#2F4B6A]">{c.email || '—'}</div>
+    </div>
+
+    <div className="text-[13px]">
+      <div className="text-[#6B7C8F]">Phone</div>
+      <div className="break-words text-[#2F4B6A]">{c.phone || '—'}</div>
+    </div>
+  </div>
+
+  {/* Desktop row */}
+  <div className="hidden md:grid grid-cols-5 items-center px-5 py-4 text-[14px] text-[#0F1F33]">
+    <div className="text-[#6B7C8F]">
+      {new Date(c.createdAt).toLocaleDateString('en-GB')}
+    </div>
+    <div className="truncate">{c.fullName}</div>
+    <div className="text-[#2F4B6A] truncate">{c.email}</div>
+    <div className="text-[#2F4B6A] truncate">{c.phone}</div>
+    <div className="flex justify-end">
+      <button
+        onClick={() => openConfigure(c)}
+        className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white hover:opacity-95"
+      >
+        Configure Message
+      </button>
+    </div>
+  </div>
+</li>
+
           ))}
         </ul>
       )}
@@ -255,6 +284,7 @@ function ConfigureMessageModal({
     }
   }
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const canSubmit =
     !!date &&
     !!time &&
@@ -264,7 +294,8 @@ function ConfigureMessageModal({
 
   return (
     <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-xl">
+  <div className="w-full max-w-lg md:max-h-[90vh] rounded-2xl bg-white p-6 shadow-xl overflow-y-auto
+                  max-h-[calc(100dvh-2rem)]">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-semibold">Configure Message</h3>
           <button
@@ -358,7 +389,7 @@ function ConfigureMessageModal({
               <textarea
                 value={smsContent}
                 onChange={(e) => setSmsContent(e.target.value)}
-                className="w-full min-h-[120px] rounded-2xl border border-[#E6EEF5] p-3 text-[14px] text-[#0F1F33]"
+  className="w-full min-h-[140px] md:min-h-[160px] rounded-2xl border border-[#E6EEF5] p-3 text-[14px] text-[#0F1F33] break-words"
                 placeholder="Type the SMS text here…"
               />
               <div className="mt-1 text-xs text-[#7B8896]">
@@ -387,7 +418,7 @@ function ConfigureMessageModal({
                 <textarea
                   value={emailHtml}
                   onChange={(e) => setEmailHtml(e.target.value)}
-                  className="w-full min-h-[160px] rounded-2xl border border-[#E6EEF5] p-3 text-[14px] text-[#0F1F33] font-mono"
+  className="w-full min-h-[140px] md:min-h-[160px] rounded-2xl border border-[#E6EEF5] p-3 text-[14px] text-[#0F1F33] break-words"
                   placeholder="<h2>Special Offer</h2>..."
                 />
                 <div className="mt-1 text-xs text-[#7B8896]">
