@@ -67,18 +67,15 @@ export default function HowItWorks() {
         <Card ref={r1}>
           <Header
             icon={<QrCode className="h-6 w-6" />}
-            title="Create a QR in one click"
+            title="Create a QR in One Click"    
             step="Step 1"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">
-            Generate a branded QR and place it anywhere. Visitors scan and land
+            Generate a  QR and place it anywhere. Visitors scan and land
             on your frictionless form.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-[#22384F]">
-            <li className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#3D6984]" />
-              Custom logo & colors
-            </li>
+          
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[#3D6984]" />
               Auto-hosted form page
@@ -90,7 +87,7 @@ export default function HowItWorks() {
         <Card ref={r2}>
           <Header
             icon={<UsersRound className="h-6 w-6" />}
-            title="Capture contacts instantly"
+            title="Capture Contacts Instantly"
             step="Step 2"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">
@@ -107,7 +104,7 @@ export default function HowItWorks() {
         <Card ref={r3}>
           <Header
             icon={<Send className="h-6 w-6" />}
-            title="Schedule & send automatically"
+            title="Schedule & Send Automatically"
             step="Step 3"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">

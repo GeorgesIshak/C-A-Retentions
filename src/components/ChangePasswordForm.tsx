@@ -50,7 +50,7 @@ export default function ChangePasswordForm() {
         setValue={setCurrent}
         show={showCurrent}
         toggleShow={() => setShowCurrent((s) => !s)}
-        placeholder="Enter old password"
+        placeholder="Enter old Password"
         autoComplete="current-password"
       />
 
@@ -62,7 +62,7 @@ export default function ChangePasswordForm() {
         setValue={setNext}
         show={showNext}
         toggleShow={() => setShowNext((s) => !s)}
-        placeholder="Enter new password"
+        placeholder="Enter New Password"
         autoComplete="new-password"
       />
 
@@ -74,7 +74,7 @@ export default function ChangePasswordForm() {
         setValue={setConfirm}
         show={showConfirm}
         toggleShow={() => setShowConfirm((s) => !s)}
-        placeholder="Confirm new password"
+        placeholder="Confirm New Password"
         autoComplete="new-password"
       />
 

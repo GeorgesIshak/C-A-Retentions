@@ -37,12 +37,12 @@ export default function HomeHero() {
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link
-              href="/register"
+              href="#pricing"
               onMouseEnter={() => setHover(true)}
               onMouseLeave={() => setHover(false)}
               className="inline-flex items-center justify-center rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-6 py-3 text-sm font-medium text-white shadow transition-[transform,opacity,filter] hover:brightness-105 hover:shadow-md active:scale-[0.98]"
             >
-              Get started
+              Get Started
               <span
                 className={`ml-1.5 transition-transform ${
                   hover ? "translate-x-0.5" : ""
@@ -57,7 +57,7 @@ export default function HomeHero() {
               href="#pricing"
               className="inline-flex items-center justify-center rounded-full border border-[#CAD7E5] bg-white px-6 py-3 text-sm font-medium text-[#1C2E4A] hover:bg-[#F1F6FA]"
             >
-              View packages
+              View Packages
             </Link>
           </div>
 
@@ -73,7 +73,7 @@ export default function HomeHero() {
             </span>
             <span className="inline-flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-indigo-500" />
-              Analytics
+              Consumption Counter
             </span>
           </div>
         </div>
