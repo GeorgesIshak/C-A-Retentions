@@ -67,9 +67,9 @@ export default async function Page() {
 
         {/* CTA Section (no link needed here) */}
         <section className="mx-auto mt-20 max-w-4xl rounded-3xl border border-[#E6EEF5] bg-white/60 backdrop-blur-sm px-8 py-14 text-center shadow-sm">
-          <h4 className="text-2xl md:text-3xl font-bold text-[#1C2E4A]">
+          <h3 className="text-2xl md:text-3xl font-bold text-[#1C2E4A]">
             Turn every QR scan into a customer — automatically.
-          </h4>
+          </h3>
 
           <p className="mt-3 text-[#546274] max-w-xl mx-auto">
             Capture leads, send SMS & email flows, and boost retention with zero manual work.
