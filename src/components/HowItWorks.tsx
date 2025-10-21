@@ -170,9 +170,9 @@ function Header({
         <div className="text-[11px] font-semibold uppercase tracking-wide text-[#6B7C8F]">
           {step}
         </div>
-        <h4 className="mt-0.5 text-[16px] font-semibold text-[#0F1F33]">
+        <h3 className="mt-0.5 text-[16px] font-semibold text-[#0F1F33]">
           {title}
-        </h4>
+        </h3>
       </div>
     </div>
   );
