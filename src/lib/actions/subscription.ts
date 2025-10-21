@@ -136,9 +136,9 @@ export async function sendMessage(payload: {
     },
     body: JSON.stringify({
       clientId: payload.clientId,
-      type: payload.type,               // ← send as-is: 'send-message' | 'send-email'
+      type: payload.type,              
       date: utcDate,
-      template: payload.template,       // optional override
+      template: payload.template,       
     }),
     cache: 'no-store',
   });
