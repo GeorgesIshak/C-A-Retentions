@@ -8,6 +8,7 @@ import Faq from "@/components/Faq";
 import HowItWorks from "@/components/HowItWorks";
 import Header from "@/components/Header";
 import SiteFooter from "@/components/SiteFooter";
+import { Mail, Phone } from "lucide-react";
 
 export default async function Page() {
   const packages: Package[] = await listPackages({ active: true, limit: 100 });
@@ -65,25 +66,41 @@ export default async function Page() {
           />
         </section>
 
-        {/* CTA Section (no link needed here) */}
-        <section className="mx-auto mt-20 max-w-4xl rounded-3xl border border-[#E6EEF5] bg-white/60 backdrop-blur-sm px-8 py-14 text-center shadow-sm">
-          <h3 className="text-2xl md:text-3xl font-bold text-[#1C2E4A]">
-            Turn every QR scan into a customer — automatically.
-          </h3>
+    {/* Contact Form Section */}
+<section id="contact" className="mx-auto mt-24 ">
+  <h2 className="text-4xl md:text-5xl font-extrabold text-[#1C2E4A] mb-8 ">
+    Reach Out Anytime
+  </h2>
 
-          <p className="mt-3 text-[#546274] max-w-xl mx-auto">
-            Capture leads, send SMS & email flows, and boost retention with zero manual work.
-          </p>
+  <div className="flex flex-col md:flex-row items-start gap-10">
+    {/* Left: Icons and Contact */}
 
-          <div className="mt-6 flex justify-center">
-            <a
-              href="#packages"
-              className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-6 py-3 text-white font-medium hover:opacity-95 transition"
-            >
-              Get Started Now
-            </a>
-          </div>
-        </section>
+
+    {/* Right: Description Text */}
+    <p className=" text-lg md:text-xl text-[#546274]">
+      Have any questions or need assistance? <br/><br/>  Whether you’re curious about our services, need help with an order, or want advice on choosing the right solution, we’re here to help. Reach out to us anytime via email or phone, and our friendly team will respond promptly to ensure all your questions are answered. <br></br>Your satisfaction is our priority, and we’re always ready to provide guidance, support, or any information you need to make your experience smooth and enjoyable.
+    </p>
+        <div className="flex flex-col gap-6 ">
+      <a
+        href="mailto:contact@yourcompany.com"
+        className="flex items-center gap-4 bg-[#F1F5F9] hover:bg-[#E6EEF5] transition rounded-2xl px-6 py-4 shadow-md text-lg md:text-xl font-medium"
+      >
+        <Mail className="text-[#3D6984]" size={28} />
+        contact@yourcompany.com
+      </a>
+
+      <a
+        href="tel:+966555123456"
+        className="flex items-center gap-4 bg-[#F1F5F9] hover:bg-[#E6EEF5] transition rounded-2xl px-6 py-4 shadow-md text-lg md:text-xl font-medium"
+      >
+        <Phone className="text-[#3D6984]" size={28} />
+        +966 555 123 456
+      </a>
+    </div>
+  </div>
+</section>
+
+
 
         <div className="h-12" />
       </main>

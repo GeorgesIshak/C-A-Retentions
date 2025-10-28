@@ -2,10 +2,8 @@
 // app/dashboard/contacts/ContactsPage.tsx
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import QrModal from "@/components/qr/QrModal";
-import { logout } from "@/lib/actions/auth";
 import { sendMessage } from "@/lib/actions/subscription";
 
 type Contact = {
@@ -18,7 +16,6 @@ type Contact = {
 };
 
 export default function ContactsPage({
-  userId,
   initialRows,
 }: {
   userId: string | null;
@@ -33,14 +30,8 @@ export default function ContactsPage({
   const configureId = sp.get("configure"); // string | null
   const cfgOpen = Boolean(configureId);
 
-  const [qrOpen, setQrOpen] = useState(false);
-  const isLoggedIn = Boolean(userId);
 
-  const qrUrl = useMemo(() => {
-    if (typeof window === "undefined" || !userId) return "";
-    const origin = window.location.origin;
-    return `${origin}/guest-form?uid=${encodeURIComponent(userId)}`;
-  }, [userId]);
+
 
   function openConfigure(c: Contact) {
     const params = new URLSearchParams(sp.toString());
@@ -56,31 +47,11 @@ export default function ContactsPage({
 
   return (
     <main className="mx-auto max-w-7xl">
-      {/* Logout */}
-      <div className="mb-2 flex justify-end">
-        <form action={logout}>
-          <button
-            type="submit"
-            className="rounded-full border border-[#D6E3EE] px-3 py-1 text-sm text-[#0F1F33] hover:bg-[#F1F6FA]"
-            title="Logout"
-          >
-            Logout
-          </button>
-        </form>
-      </div>
+      
 
       <div className="grid grid-cols-2 items-center">
         <h1 className="text-[28px] font-bold text-[#0F1F33] mb-6">Contacts</h1>
-        <div className="px-5 py-6 flex justify-end">
-          <button
-            onClick={() => (isLoggedIn ? setQrOpen(true) : alert("Please log in first"))}
-            className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white shadow hover:opacity-95 disabled:opacity-50"
-            disabled={!isLoggedIn}
-            title={isLoggedIn ? "Generate QR Code" : "Login required to generate QR"}
-          >
-            Generate QR Code
-          </button>
-        </div>
+  
       </div>
 
       {/* Header */}
@@ -160,7 +131,6 @@ export default function ContactsPage({
         </ul>
       )}
 
-      <QrModal open={qrOpen} onClose={() => setQrOpen(false)} url={qrUrl} />
 
       {/* URL-driven Configure Message Modal */}
       <ConfigureMessageModal
@@ -182,8 +152,9 @@ function ConfigureMessageModal({
   onClose: () => void;
   contactId: string | null;
 }) {
-  const [date, setDate] = useState<string>(""); // yyyy-mm-dd
-  const [time, setTime] = useState<string>(""); // HH:MM
+  const today = new Date().toISOString().split("T")[0]; // "YYYY-MM-DD"
+  const [date, setDate] = useState(today); // default to today
+  const [time, setTime] = useState("09:00"); // default to 09:00 AM
   const [type, setType] = useState<"send-message" | "send-email">("send-message");
 
   // Template mode & fields
@@ -199,15 +170,15 @@ function ConfigureMessageModal({
     if (open) {
       setNotice(null);
       setPending(false);
-      setDate("");
-      setTime("");
-      setType("send-message");
+     setDate(today);   // <-- default to today
+    setTime("09:00"); // <-- default time
+    setType("send-message");
       setMode("saved");
       setSmsContent("");
       setEmailSubject("");
       setEmailHtml("");
     }
-  }, [open, contactId]);
+  }, [open, contactId,today]);
 
   if (!open || !contactId) return null;
 

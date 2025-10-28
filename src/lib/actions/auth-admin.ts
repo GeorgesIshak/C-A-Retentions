@@ -5,13 +5,16 @@ import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 
 const API_URL = process.env.BACKEND_API_URL!;
-const OWNER_EMAIL = (process.env.OWNER_EMAIL || '').toLowerCase();
-
 if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
 
-type JWTPayload = { email?: string; exp?: number };
+type JWTPayload = {
+  email?: string;
+  exp?: number;
+  isAdmin?: boolean;
+  roles?: string[] | readonly string[];
+};
 
-// Robust base64url decode (Node/server action is fine with Buffer, but normalize first)
+// ------- helpers -------
 function decodeJwtPayload<T = any>(jwt: string): T | undefined {
   try {
     const payload = jwt.split('.')[1] || '';
@@ -39,6 +42,34 @@ async function readErr(res: Response, fallback: string) {
   }
 }
 
+/**
+ * Returns true if token payload indicates admin.
+ * - isAdmin === true
+ * - or roles includes 'admin'
+ */
+function isAdminFromPayload(p?: JWTPayload | null) {
+  if (!p) return false;
+  if (p.isAdmin === true) return true;
+  if (Array.isArray(p.roles) && p.roles.includes('admin')) return true;
+  return false;
+}
+
+/**
+ * If token lacks admin claim, optionally verify by calling /users/profile.
+ * Your backend should return { isAdmin: boolean } there.
+ */
+async function fetchAdminFromProfile(token: string) {
+  const res = await fetch(`${API_URL}/users/profile`, {
+    method: 'GET',
+    headers: { Authorization: `Bearer ${token}` },
+    cache: 'no-store',
+  });
+  if (!res.ok) return false;
+  const profile: any = await res.json().catch(() => ({}));
+  return profile?.isAdmin === true || (Array.isArray(profile?.roles) && profile.roles.includes('admin'));
+}
+
+// ------- actions -------
 export async function loginAdmin(formData: FormData) {
   const email = String(formData.get('email') || '').trim().toLowerCase();
   const password = String(formData.get('password') || '');
@@ -59,7 +90,6 @@ export async function loginAdmin(formData: FormData) {
     redirect('/admin-login?error=' + encodeURIComponent(msg));
   }
 
-  // Be defensive parsing success payloads too
   let accessToken = '';
   let refreshToken = '';
   try {
@@ -74,22 +104,29 @@ export async function loginAdmin(formData: FormData) {
     redirect('/admin-login?error=' + encodeURIComponent('Missing tokens in response.'));
   }
 
+  // Decode token and validate expiry + admin claim
   const payload = decodeJwtPayload<JWTPayload>(accessToken) || {};
-  const tokenEmail = String(payload.email || '').toLowerCase();
   const isExpired = typeof payload.exp === 'number' ? payload.exp * 1000 <= Date.now() : false;
-
   if (isExpired) {
     redirect('/admin-login?error=' + encodeURIComponent('Session token already expired. Please sign in again.'));
   }
 
-  if (tokenEmail !== OWNER_EMAIL) {
-    redirect('/admin-login?error=' + encodeURIComponent('This account is not the admin.'));
+  // Prefer the claim in the token
+  let isAdmin = isAdminFromPayload(payload);
+
+  // Fallback: if token didn't include claim, ask backend profile
+  if (!isAdmin) {
+    isAdmin = await fetchAdminFromProfile(accessToken);
   }
 
+  if (!isAdmin) {
+    redirect('/admin-login?error=' + encodeURIComponent('This account is not authorized as admin.'));
+  }
+
+  // Set cookies
   const jar = await cookies();
   const isProd = process.env.NODE_ENV === 'production';
 
-  // Session cookies
   jar.set('accessToken', accessToken, {
     httpOnly: true,
     secure: isProd,
@@ -106,7 +143,6 @@ export async function loginAdmin(formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
-  // Go directly to the real page
   redirect('/admin/packages');
 }
 
@@ -114,7 +150,6 @@ export async function logout() {
   const jar = await cookies();
   const access = jar.get('accessToken')?.value;
 
-  // Best-effort revoke
   try {
     await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
@@ -125,14 +160,12 @@ export async function logout() {
       cache: 'no-store',
     });
   } catch {
-    // ignore network errors on logout
+    // ignore
   }
 
-  // Clear cookies
   jar.delete('accessToken');
   jar.delete('refreshToken');
 
-  // Optional flash (server-only)
   jar.set('flash', 'Signed out.', {
     httpOnly: true,
     sameSite: 'lax',

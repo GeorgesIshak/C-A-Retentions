@@ -3,6 +3,28 @@
 
 import React, { useEffect, useRef } from "react";
 import { QRCodeCanvas } from "qrcode.react";
+import NextImage from "next/image"; // ✅ alias to avoid collision
+import { X } from "lucide-react";
+
+// Helper to fill a rounded rectangle
+function fillRoundedRect(
+  ctx: CanvasRenderingContext2D,
+  x: number,
+  y: number,
+  w: number,
+  h: number,
+  r: number
+) {
+  const rr = Math.max(0, Math.min(r, Math.min(w, h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + rr, y);
+  ctx.arcTo(x + w, y, x + w, y + h, rr);
+  ctx.arcTo(x + w, y + h, x, y + h, rr);
+  ctx.arcTo(x, y + h, x, y, rr);
+  ctx.arcTo(x, y, x + w, y, rr);
+  ctx.closePath();
+  ctx.fill();
+}
 
 type Props = {
   open: boolean;
@@ -12,14 +34,10 @@ type Props = {
 
 export default function QrModal({ open, onClose, url }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const dialogRef = useRef<HTMLDivElement | null>(null);
 
-  // Close on ESC + lock scroll while open
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-    };
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
     const prevOverflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
@@ -30,75 +48,157 @@ export default function QrModal({ open, onClose, url }: Props) {
   }, [open, onClose]);
 
   if (!open) return null;
-
   const hasUrl = Boolean(url);
 
+  // Compose QR + gradient border + logo into one PNG
   function handleDownload() {
-    if (!canvasRef.current) return;
-    try {
-      const data = canvasRef.current.toDataURL("image/png");
+    const qrCanvas = canvasRef.current;
+    if (!qrCanvas) return;
+
+    // Layout tuning
+    const border = 24;
+    const radius = 24;
+    const innerPad = 20;
+    const gap = 16;
+    const logoW = 110;
+    const logoH = 45;
+
+    const qrPx = qrCanvas.width; // actual pixels of the QR canvas
+    const innerW = qrPx + innerPad * 2;
+    const innerH = qrPx + innerPad * 2 + gap + logoH;
+    const outW = innerW + border * 2;
+    const outH = innerH + border * 2;
+
+    // HiDPI export
+    const dpr = window.devicePixelRatio || 1;
+    const out = document.createElement("canvas");
+    out.width = Math.round(outW * dpr);
+    out.height = Math.round(outH * dpr);
+    const ctx = out.getContext("2d");
+    if (!ctx) return;
+    ctx.scale(dpr, dpr);
+
+    // Gradient border
+    const grad = ctx.createLinearGradient(0, 0, 0, outH);
+    grad.addColorStop(0, "#3D6984");
+    grad.addColorStop(1, "#1C2E4A");
+    ctx.fillStyle = grad;
+    fillRoundedRect(ctx, 0, 0, outW, outH, radius);
+
+    // Inner white panel
+    ctx.fillStyle = "#ffffff";
+    fillRoundedRect(ctx, border, border, innerW, innerH, radius - 6);
+
+    // Draw QR
+    const qrX = border + innerPad;
+    const qrY = border + innerPad;
+    ctx.drawImage(qrCanvas, qrX, qrY, qrPx, qrPx);
+
+    // Draw logo (use browser constructor, not Next.js <Image/>)
+    const img = new window.Image(); // ✅ use DOM constructor
+    img.src = `${window.location.origin}/images/logo.svg`;
+    // If you ever serve from another domain, consider:
+    // img.crossOrigin = "anonymous";
+
+    img.onload = () => {
+      const lx = border + (innerW - logoW) / 2;
+      const ly = border + innerPad + qrPx + gap;
+      ctx.drawImage(img, lx, ly, logoW, logoH);
+
+      const data = out.toDataURL("image/png");
       const a = document.createElement("a");
       a.href = data;
       a.download = "qr-code.png";
-      document.body.appendChild(a); // Safari needs it in the DOM
+      document.body.appendChild(a);
       a.click();
       a.remove();
-    } catch {
-      // no-op
-    }
-  }
+    };
 
-  function onBackdropClick(e: React.MouseEvent<HTMLDivElement>) {
-    // more robust than comparing to ref: only close if click is on backdrop itself
-    if (e.currentTarget === e.target) onClose();
+    img.onerror = () => {
+      // fallback: still allow download without logo
+      const data = out.toDataURL("image/png");
+      const a = document.createElement("a");
+      a.href = data;
+      a.download = "qr-code.png";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    };
   }
 
   return (
     <div
-      ref={dialogRef}
-      onClick={onBackdropClick}
+      onClick={(e) => e.currentTarget === e.target && onClose()}
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
       role="dialog"
       aria-modal="true"
       aria-label="QR Code modal"
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="flex items-center justify-between">
-          <h3 className="text-lg font-semibold">QR Code</h3>
-          <button
-            onClick={onClose}
-            className="rounded-lg border border-[#E5EBF0] px-3 py-1 text-sm hover:bg-[#F8FAFB]"
-          >
-            Close
-          </button>
-        </div>
+      <div className="w-full max-w-lg rounded-2xl bg-white p-8 shadow-xl relative">
+        {/* Close (X) icon top-right */}
+        <button
+          onClick={onClose}
+          className="absolute right-5 top-5 rounded-full border border-[#E5EBF0] p-2 hover:bg-[#F8FAFB] transition"
+          aria-label="Close"
+        >
+          <X className="w-4 h-4 text-[#1C2E4A]" strokeWidth={2.5} />
+        </button>
 
-        <div className="mt-6 flex justify-center min-h-[240px]">
-          {hasUrl ? (
-            // cast the ref to satisfy TS and ensure we get the <canvas>
-            <QRCodeCanvas ref={canvasRef as any} value={url} size={220} includeMargin />
-          ) : (
-            <div className="text-sm text-[#6B7C8F] self-center">
-              No URL provided.
+        {/* Title */}
+        <h4 className="text-xl font-semibold text-[#1C2E4A] mb-4 text-left">
+          QR Code
+        </h4>
+
+        {/* Description */}
+        <p className="text-center text-[15px] text-[#0F1F33] mb-6">
+          A unique QR Code has been generated by the system for this asset.
+        </p>
+
+        {/* QR + logo area */}
+        {hasUrl ? (
+          <div className="relative mx-auto w-fit p-7 rounded-[24px] bg-gradient-to-b from-[#3D6984] to-[#1C2E4A]">
+            <div className="bg-white rounded-2xl p-5 flex flex-col items-center">
+              <QRCodeCanvas
+                ref={canvasRef as any}
+                value={url}
+                size={280} // visible size
+                includeMargin
+              />
+              {/* On-screen logo (download uses canvas draw above) */}
+              <div className="mt-4 flex justify-center">
+                <NextImage
+                  src="/images/logo.svg"
+                  alt="C&A Retentions"
+                  width={110}
+                  height={45}
+                  style={{ objectFit: "contain" }}
+                />
+              </div>
             </div>
-          )}
-        </div>
+          </div>
+        ) : (
+          <div className="text-sm text-[#6B7C8F] text-center mt-4">
+            No URL provided.
+          </div>
+        )}
 
-        <div className="mt-6 flex justify-center gap-3">
-          <button
-            onClick={handleDownload}
-            disabled={!hasUrl}
-            className="rounded-xl bg-[#1C2E4A] px-6 py-2 text-sm text-white hover:opacity-95 disabled:opacity-50"
-          >
-            Download QR Code
-          </button>
-          <button
-            onClick={onClose}
-            className="rounded-xl border border-[#E5EBF0] px-6 py-2 text-sm hover:bg-[#F8FAFB]"
-          >
-            Done
-          </button>
-        </div>
+        {/* Buttons stacked under each other */}
+        {hasUrl && (
+          <div className="mt-8 flex flex-col items-center gap-3">
+            <button
+              onClick={handleDownload}
+              className="w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-8 py-3 text-white text-[15px] font-medium shadow hover:opacity-95 transition"
+            >
+              Download as PNG
+            </button>
+            <button
+              onClick={onClose}
+              className="w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-8 py-3 text-white text-[15px] font-medium shadow hover:opacity-95 transition"
+            >
+              Done
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

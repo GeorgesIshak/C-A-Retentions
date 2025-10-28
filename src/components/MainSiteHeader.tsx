@@ -12,9 +12,10 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 
   // If these sections live on the homepage, use hash links
   const navItems = [
-    { name: "How it works", href: "/#how-it-works" },
+    { name: "How It Works", href: "/#how-it-works" },
     { name: "Packages", href: "/#packages" },
     { name: "FAQ", href: "/#faq" },
+      { name: "Contact", href: "/#contact" },
   ];
 
   return (
@@ -83,7 +84,7 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 
           {/* Links + user (right) */}
           <nav className="flex items-center gap-8" aria-label="Main Navigation">
-            <ul className="flex items-center gap-8 text-sm uppercase tracking-wide">
+            <ul className="flex items-center gap-8 text-sm  tracking-wide">
               {navItems.map((item) => (
                 <li key={item.name}>
                   <Link

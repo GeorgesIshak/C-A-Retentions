@@ -8,7 +8,7 @@ type Item = { q: string; a: React.ReactNode };
 
 export default function Faq({ items }: { items: Item[] }) {
   return (
-    <section className="mx-auto mt-14 max-w-7xl px-4 md:mt-16 lg:px-6">
+    <section className="mx-auto mt-14 max-w-7xl  md:mt-16 ">
       <h2 className="text-2xl font-bold text-[#1C2E4A] md:text-3xl">FAQs</h2>
       <p className="mt-1 text-[#546274]">Quick answers to common questions.</p>
 

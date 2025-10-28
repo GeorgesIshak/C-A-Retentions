@@ -3,6 +3,31 @@
 
 import { cookies } from 'next/headers';
 
+// Mark + footer HTML
+const BRAND_FOOTER_MARK = '<!-- BRAND_FOOTER -->';
+const BRAND_FOOTER_HTML = `
+${BRAND_FOOTER_MARK}
+<hr style="border:none;border-top:1px solid #eee;margin:20px 0;" />
+<div style="text-align:center;font-family:'Segoe UI',Arial,sans-serif;">
+  <img
+    src="https://c-a-retentions.vercel.app/images/logo.svg"
+    alt="C&A Retentions"
+    width="90"
+    style="display:block;margin:0 auto 6px;object-fit:contain;"
+  />
+  <div style="font-size:14px;font-weight:600;color:#1C2E4A;">
+    Communication Provider <span style="color:#3D6984;">C&A Retentions</span>
+  </div>
+</div>
+`;
+
+function withBrandFooter(html?: string | null) {
+  const base = html ?? '';
+  if (!base) return BRAND_FOOTER_HTML;
+  if (base.includes(BRAND_FOOTER_MARK)) return base; // already has it
+  return `${base}\n${BRAND_FOOTER_HTML}`;
+}
+
 /** Read inside functions; don't throw at module import time */
 function requireApiUrl() {
   const url = process.env.BACKEND_API_URL;
@@ -101,14 +126,14 @@ export async function updateMessageTemplate(input: {
   return res.json();
 }
 
-// ------// ---------------------------------------
+// ---------------------------------------
 // POST /users/send-message  (schedule SMS/Email)
 // ---------------------------------------
 export type FrontendMessageType = 'send-message' | 'send-email';
 
 export async function sendMessage(payload: {
   clientId: string;
-  type: FrontendMessageType;           // 'send-message' | 'send-email'
+  type: FrontendMessageType; // 'send-message' | 'send-email'
   date?: Date | string;
   /** optional: override default template on this send */
   template?: {
@@ -128,6 +153,40 @@ export async function sendMessage(payload: {
       ? new Date(payload.date).toISOString()
       : undefined;
 
+  // 📨 Append brand footer for EMAILS ONLY (handles custom + saved template)
+  let templateToSend = payload.template;
+
+  if (payload.type === 'send-email') {
+    if (templateToSend?.emailTemplate?.html) {
+      // Custom HTML passed from frontend → append footer here
+      templateToSend = {
+        ...templateToSend,
+        emailTemplate: {
+          subject: templateToSend.emailTemplate.subject ?? '',
+          html: withBrandFooter(templateToSend.emailTemplate.html),
+        },
+      };
+    } else {
+      // No custom HTML passed → pull saved template and append
+      try {
+        const saved = await getMessageTemplate().catch(() => null);
+        const savedEmail = saved?.emailTemplate;
+        if (savedEmail?.html) {
+          templateToSend = {
+            ...(templateToSend ?? {}),
+            emailTemplate: {
+              subject: savedEmail.subject ?? '',
+              html: withBrandFooter(savedEmail.html),
+            },
+          };
+        }
+        // if no saved email exists, we let backend default stand
+      } catch {
+        // ignore; fallback to backend default
+      }
+    }
+  }
+
   const res = await fetch(`${API_URL}/users/send-message`, {
     method: 'POST',
     headers: {
@@ -136,9 +195,9 @@ export async function sendMessage(payload: {
     },
     body: JSON.stringify({
       clientId: payload.clientId,
-      type: payload.type,              
+      type: payload.type,
       date: utcDate,
-      template: payload.template,       
+      template: templateToSend ?? payload.template, // ensure we send the augmented one
     }),
     cache: 'no-store',
   });

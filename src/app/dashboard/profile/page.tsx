@@ -1,12 +1,17 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+// app/dashboard/profile/page.tsx
 import { getTenantProfile } from "@/lib/actions/tenant";
-import { getMessageTemplate } from "@/lib/actions/subscription"; // ← IMPORT
+import { getMessageTemplate } from "@/lib/actions/subscription";
 import ChangePasswordForm from "@/components/ChangePasswordForm";
-import TemplateEditors from "@/components/TemplateEditors";           // ← IMPORT
+import TemplateEditors from "@/components/TemplateEditors";
+import { ClientQr } from "./ClientQr";
+import { getCurrentUserFromToken } from "@/lib/actions/auth";
 
 export default async function ProfilePage() {
-  const [profile, template] = await Promise.all([
+  const [user, profile, template] = await Promise.all([
+    getCurrentUserFromToken().catch(() => null),
     getTenantProfile(),
-    getMessageTemplate(), // ← fetch once on the server
+    getMessageTemplate(),
   ]);
 
   const name = profile?.fullName && profile.fullName !== "null" ? profile.fullName : "";
@@ -20,17 +25,17 @@ export default async function ProfilePage() {
     ? new Date(profile.expiryDate).toLocaleDateString()
     : "No active plan";
 
+  // prefer auth user id, then any profile fallback; coerce to string
+  const userId =
+    (user?.id ?? (profile as any)?.userId ?? (profile as any)?.id ?? null) &&
+    String(user?.id ?? (profile as any)?.userId ?? (profile as any)?.id);
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 px-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <h3 className="text-xl font-bold">Your Profile</h3>
-        <button
-          type="button"
-          className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-white text-sm"
-        >
-          Generate QR
-        </button>
+        <ClientQr userId={userId} /> {/* Button + QR modal */}
       </div>
 
       {/* Profile block */}
@@ -39,31 +44,36 @@ export default async function ProfilePage() {
           <Field label="User Name">
             <input className="input" defaultValue={name} disabled />
           </Field>
+
           <Field label="Email">
             <input type="email" className="input" defaultValue={email} disabled />
           </Field>
+
           <Field label="Phone Number">
             <input className="input" defaultValue={phone} disabled />
           </Field>
+
           <Field label="SMS Contact Counter">
             <div className="flex items-center gap-3">
               <div className="input">{smsCurrent}</div>
               <div className="text-xs text-[#7B8896]">of {smsTotal}</div>
             </div>
           </Field>
+
           <Field label="Email Contact Counter">
             <div className="flex items-center gap-3">
               <div className="input">{emailCurrent}</div>
               <div className="text-xs text-[#7B8896]">of {emailTotal}</div>
             </div>
           </Field>
+
           <Field label="Plan Expiry Date" className="md:col-span-3">
             <div className="input">{expiryDate}</div>
           </Field>
         </div>
       </section>
 
-      {/* 📨 Template Editors (editable, prefilled) */}
+      {/* 📨 Template Editors (prefilled, editable) */}
       <TemplateEditors initial={template} />
 
       {/* 🔐 Reset Password */}
