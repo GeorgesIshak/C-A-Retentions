@@ -34,7 +34,7 @@ ${BRAND_FOOTER_MARK}
 </svg>
   </div>
   <div style="font-size:14px;font-weight:600;color:#1C2E4A;">
-    Communication Provider <span style="color:#3D6984;">C&A Retentions</span>
+    Communication Provider <span style="color:#3D6984;">C&A Retention</span>
   </div>
 </div>
 `;

@@ -7,7 +7,6 @@ import { logout } from "@/lib/actions/auth-admin";
 
 const NAV = [
   { href: "/admin/packages", label: "Packages" },
-  { href: "/admin/users", label: "Users" },
   { href: "/admin/tenants", label: "Tenants" },
 ];
 
@@ -24,7 +23,7 @@ export default function AdminSidebar() {
         <Link href="/admin/packages">
           <Image
             src="/images/logo.svg"
-            alt="C&A Retentions"
+            alt="C&A Retention"
             width={180}
             height={42}
             priority

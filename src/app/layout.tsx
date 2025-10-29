@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Toaster } from "react-hot-toast";
 
 export const metadata: Metadata = {
-  title: "C&A Retentions",
+  title: "C&A Retention",
   description: "Packages & automation services",
 };
 

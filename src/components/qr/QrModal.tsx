@@ -168,8 +168,8 @@ export default function QrModal({ open, onClose, url }: Props) {
               <div className="mt-4 flex justify-center">
                 <NextImage
                   src="/images/logo.svg"
-                  alt="C&A Retentions"
-                  width={110}
+                  alt="C&A Retention"
+                  width={130}
                   height={45}
                   style={{ objectFit: "contain" }}
                 />
