@@ -2,7 +2,7 @@
 
 import { useActionState, useEffect, useState, startTransition } from "react";
 import toast from "react-hot-toast";
-import { Eye, EyeOff } from "lucide-react"; // 👈 icons
+import { Eye, EyeOff } from "lucide-react";
 import { changePasswordAction, type ChangePwState } from "@/lib/actions/auth";
 
 const initial: ChangePwState = { ok: false, message: "" };
@@ -78,16 +78,17 @@ export default function ChangePasswordForm() {
         autoComplete="new-password"
       />
 
-      {/* SUBMIT */}
-      <div className="md:col-span-3 flex items-center gap-3">
-        <button
-          type="submit"
-          disabled={pending}
-          className="rounded-full border border-[#D6E3EE] px-4 py-2 text-sm text-[#0F1F33] disabled:opacity-60"
-        >
-          {pending ? "Updating…" : "Update Password"}
-        </button>
-      </div>
+    {/* SUBMIT */}
+<div className="md:col-span-3 flex justify-end mt-2">
+  <button
+    type="submit"
+    disabled={pending}
+    className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-6 py-2.5 text-sm text-white font-medium hover:opacity-95 transition disabled:opacity-60"
+  >
+    {pending ? "Updating…" : "Update Password"}
+  </button>
+</div>
+
     </form>
   );
 }

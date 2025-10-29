@@ -84,7 +84,8 @@ export async function login(formData: FormData) {
 
   // Hard gate: if the user clicked a plan before login, honor it; else go to plans (/)
   if (nextUrl) redirect(nextUrl);
-  redirect('/'); // default to plans page, not dashboard
+  redirect('/dashboard');
+
 }
 
 

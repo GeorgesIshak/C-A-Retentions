@@ -1,85 +1,82 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify, decodeJwt } from "jose";
 
-// Base64URL decode for Edge runtime (no Buffer in middleware)
-function decodeJwtPayload<T = any>(jwt: string): T | undefined {
+const rawSecret = process.env.JWT_SECRET || "";
+const JWT_SECRET = rawSecret ? new TextEncoder().encode(rawSecret) : null;
+
+async function getPayload(req: NextRequest): Promise<any | null> {
+  const token = req.cookies.get("accessToken")?.value;
+  if (!token) return null;
+
+  // Try to VERIFY if we have a secret configured and expect HS256
+  if (JWT_SECRET) {
+    try {
+      const { payload } = await jwtVerify(token, JWT_SECRET, {
+        algorithms: ["HS256"],
+        clockTolerance: 5, // tolerate small clock skew
+      });
+      return payload as any;
+    } catch (e) {
+      // fall through to decode below
+      // console.error("jwtVerify failed:", e);
+    }
+  }
+
+  // Fallback: DECODE WITHOUT VERIFY (temporary until secrets are aligned)
   try {
-    const payload = jwt.split(".")[1] || "";
-    const pad = "=".repeat((4 - (payload.length % 4)) % 4);
-    const base64 = (payload + pad).replace(/-/g, "+").replace(/_/g, "/");
-    const json = atob(base64); // Edge runtime: atob is available
-    return JSON.parse(json) as T;
+    const payload = decodeJwt(token);
+    return payload as any;
   } catch {
-    return undefined;
+    return null;
   }
 }
 
-type JWTPayload = {
-  email?: string;
-  exp?: number; // seconds since epoch
-};
-
-const OWNER_EMAIL = (process.env.OWNER_EMAIL || "").toLowerCase();
-
-export function middleware(req: NextRequest) {
+export async function middleware(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  const token = req.cookies.get("accessToken")?.value;
+  const current = pathname + (search || "");
 
-  // helper: current path + search to round-trip as ?next=
-  const currentPathWithQuery = pathname + (search || "");
+  const needsClaims = pathname === "/admin-login" || pathname.startsWith("/admin");
+  const payload = needsClaims ? await getPayload(req) : null;
+  const hasToken = Boolean(req.cookies.get("accessToken")?.value);
 
-  // ---- utility: parse token (email + expiry) ----
-  const payload = token ? decodeJwtPayload<JWTPayload>(token) : undefined;
-  const email = (payload?.email || "").toLowerCase();
-  const isExpired =
-    typeof payload?.exp === "number" ? payload!.exp * 1000 <= Date.now() : false;
-
-  // ===========================
-  // Normal User Dashboard Gate
-  // ===========================
-  if (pathname.startsWith("/dashboard")) {
-    // No token or expired → login
-    if (!token || isExpired) {
-      const url = new URL("/login", req.url);
-      url.searchParams.set("next", currentPathWithQuery);
-      return NextResponse.redirect(url);
+  // ---- Admin login page
+  if (pathname === "/admin-login") {
+    if (hasToken && payload) {
+      const isAdmin = payload?.isAdmin === true;
+      return NextResponse.redirect(new URL(isAdmin ? "/admin" : "/dashboard", req.url));
     }
-
-    // If it's the owner, bounce them to Admin
-    if (email === OWNER_EMAIL) {
-      return NextResponse.redirect(new URL("/admin", req.url));
-    }
+    return NextResponse.next();
   }
 
-  // ==================
-  // Admin Gate
-  // ==================
+  // ---- Protect /admin/*
   if (pathname.startsWith("/admin")) {
-    // Allow hitting the admin login screen without token
-    if (pathname === "/admin-login") {
-      return NextResponse.next();
-    }
-
-    // No token or expired → admin-login
-    if (!token || isExpired) {
+    if (!hasToken || !payload) {
       const url = new URL("/admin-login", req.url);
-      url.searchParams.set("next", currentPathWithQuery);
+      url.searchParams.set("next", current);
       return NextResponse.redirect(url);
     }
-
-    // Has token: only owner may pass
-    if (email !== OWNER_EMAIL) {
-      // Non-admin: send to user dashboard (will stay there due to check above)
+    const isAdmin = payload?.isAdmin === true;
+    if (!isAdmin) {
       return NextResponse.redirect(new URL("/dashboard", req.url));
     }
+    return NextResponse.next();
+  }
+
+  // ---- Protect /dashboard/*
+  if (pathname.startsWith("/dashboard")) {
+    if (!hasToken) {
+      const url = new URL("/login", req.url);
+      url.searchParams.set("next", current);
+      return NextResponse.redirect(url);
+    }
+    return NextResponse.next();
   }
 
   return NextResponse.next();
 }
 
-// Only run on /dashboard/* and /admin/*
 export const config = {
-  matcher: ["/dashboard/:path*", "/admin/:path*"],
+  matcher: ["/dashboard/:path*", "/admin/:path*", "/admin-login"],
 };

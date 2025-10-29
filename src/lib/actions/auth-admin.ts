@@ -3,27 +3,19 @@
 
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
+import jwt from 'jsonwebtoken';
 
 const API_URL = process.env.BACKEND_API_URL!;
 if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
 
-type JWTPayload = {
-  email?: string;
-  exp?: number;
-  isAdmin?: boolean;
-  roles?: string[] | readonly string[];
-};
-
-// ------- helpers -------
-function decodeJwtPayload<T = any>(jwt: string): T | undefined {
+/** Helper: Decode token and check isAdmin */
+function isAdminFromToken(token?: string | null): boolean {
+  if (!token) return false;
   try {
-    const payload = jwt.split('.')[1] || '';
-    const base64 = payload.replace(/-/g, '+').replace(/_/g, '/');
-    const pad = '='.repeat((4 - (base64.length % 4)) % 4);
-    const json = Buffer.from(base64 + pad, 'base64').toString('utf8');
-    return JSON.parse(json) as T;
+    const decoded = jwt.decode(token) as any;
+    return Boolean(decoded?.isAdmin === true);
   } catch {
-    return undefined;
+    return false;
   }
 }
 
@@ -42,42 +34,28 @@ async function readErr(res: Response, fallback: string) {
   }
 }
 
-/**
- * Returns true if token payload indicates admin.
- * - isAdmin === true
- * - or roles includes 'admin'
- */
-function isAdminFromPayload(p?: JWTPayload | null) {
-  if (!p) return false;
-  if (p.isAdmin === true) return true;
-  if (Array.isArray(p.roles) && p.roles.includes('admin')) return true;
-  return false;
-}
-
-/**
- * If token lacks admin claim, optionally verify by calling /users/profile.
- * Your backend should return { isAdmin: boolean } there.
- */
-async function fetchAdminFromProfile(token: string) {
-  const res = await fetch(`${API_URL}/users/profile`, {
-    method: 'GET',
-    headers: { Authorization: `Bearer ${token}` },
-    cache: 'no-store',
-  });
-  if (!res.ok) return false;
-  const profile: any = await res.json().catch(() => ({}));
-  return profile?.isAdmin === true || (Array.isArray(profile?.roles) && profile.roles.includes('admin'));
-}
-
-// ------- actions -------
 export async function loginAdmin(formData: FormData) {
-  const email = String(formData.get('email') || '').trim().toLowerCase();
+  const email = String(formData.get('email') || '').trim();
   const password = String(formData.get('password') || '');
+  const next = String(formData.get('next') || '/admin');
 
   if (!email || !password) {
     redirect('/admin-login?error=' + encodeURIComponent('Email and password are required.'));
   }
 
+  const jar = await cookies();
+  const existingToken = jar.get('accessToken')?.value ?? null;
+
+  // ✅ If user already logged in, verify admin access
+  if (existingToken) {
+    if (isAdminFromToken(existingToken)) {
+      redirect(next || '/admin');
+    } else {
+      redirect('/admin-login?error=' + encodeURIComponent('You are not an admin.'));
+    }
+  }
+
+  // ---- New login request
   const res = await fetch(`${API_URL}/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
@@ -104,29 +82,13 @@ export async function loginAdmin(formData: FormData) {
     redirect('/admin-login?error=' + encodeURIComponent('Missing tokens in response.'));
   }
 
-  // Decode token and validate expiry + admin claim
-  const payload = decodeJwtPayload<JWTPayload>(accessToken) || {};
-  const isExpired = typeof payload.exp === 'number' ? payload.exp * 1000 <= Date.now() : false;
-  if (isExpired) {
-    redirect('/admin-login?error=' + encodeURIComponent('Session token already expired. Please sign in again.'));
+  // ✅ Check token payload for admin privileges
+  if (!isAdminFromToken(accessToken)) {
+    redirect('/admin-login?error=' + encodeURIComponent('You are not an admin.'));
   }
 
-  // Prefer the claim in the token
-  let isAdmin = isAdminFromPayload(payload);
-
-  // Fallback: if token didn't include claim, ask backend profile
-  if (!isAdmin) {
-    isAdmin = await fetchAdminFromProfile(accessToken);
-  }
-
-  if (!isAdmin) {
-    redirect('/admin-login?error=' + encodeURIComponent('This account is not authorized as admin.'));
-  }
-
-  // Set cookies
-  const jar = await cookies();
+  // Save tokens if verified admin
   const isProd = process.env.NODE_ENV === 'production';
-
   jar.set('accessToken', accessToken, {
     httpOnly: true,
     secure: isProd,
@@ -134,7 +96,6 @@ export async function loginAdmin(formData: FormData) {
     path: '/',
     maxAge: 60 * 60, // 1 hour
   });
-
   jar.set('refreshToken', refreshToken, {
     httpOnly: true,
     secure: isProd,
@@ -143,13 +104,14 @@ export async function loginAdmin(formData: FormData) {
     maxAge: 60 * 60 * 24 * 7, // 7 days
   });
 
-  redirect('/admin/packages');
+  redirect(next || '/admin');
 }
-
+/** LOGOUT → clear cookies and set a one-time flash message */
 export async function logout() {
   const jar = await cookies();
   const access = jar.get('accessToken')?.value;
 
+  // (Optional) revoke on backend
   try {
     await fetch(`${API_URL}/auth/logout`, {
       method: 'POST',
@@ -159,20 +121,19 @@ export async function logout() {
       },
       cache: 'no-store',
     });
-  } catch {
-    // ignore
-  }
+  } catch {}
 
+  // clear session cookies
   jar.delete('accessToken');
   jar.delete('refreshToken');
 
+  // set a short-lived flash cookie (server-only)
   jar.set('flash', 'Signed out.', {
+    path: '/',
     httpOnly: true,
     sameSite: 'lax',
     secure: process.env.NODE_ENV === 'production',
-    path: '/',
-    maxAge: 60,
+    maxAge: 60, // 1 minute
   });
 
-  redirect('/admin-login');
 }
