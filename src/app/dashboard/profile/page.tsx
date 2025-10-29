@@ -9,7 +9,7 @@ import { getCurrentUserFromToken } from "@/lib/actions/auth";
 import { revalidatePath } from "next/cache";
 
 /* ----------------------- server action: update ----------------------- */
-export async function updateProfileAction(formData: FormData) {
+ async function updateProfileAction(formData: FormData) {
   "use server";
   const fullName = (formData.get("fullName") as string | null) ?? undefined;
   const businessName = (formData.get("businessName") as string | null) ?? undefined;
