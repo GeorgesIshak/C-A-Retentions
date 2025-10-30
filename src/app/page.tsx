@@ -42,29 +42,8 @@ export default async function Page() {
           />
         </section>
 
-        {/* ✅ Add ID for FAQ */}
-        <section id="faq" className="mt-20">
-          <Faq
-            items={[
-              {
-                q: "Can I test SMS without a dedicated number?",
-                a: "In live environments you need a verified sender (or purchased number). In sandbox, you can send to verified recipient numbers.",
-              },
-              {
-                q: "Do you have APIs and webhooks?",
-                a: "Yes. Import contacts, trigger campaigns, and fetch analytics via REST with signed webhooks.",
-              },
-              {
-                q: "Is my data secure?",
-                a: "Data is encrypted in transit and at rest. Role-based access and audit logs are available.",
-              },
-              {
-                q: "Can I cancel anytime?",
-                a: "Absolutely. Plans downgrade at the end of the billing period with no hidden fees.",
-              },
-            ]}
-          />
-        </section>
+
+
 
     {/* Contact Form Section */}
 <section id="contact" className="mx-auto mt-24 ">
@@ -77,9 +56,14 @@ export default async function Page() {
 
 
     {/* Right: Description Text */}
-    <p className=" text-lg md:text-xl text-[#546274]">
-      Have any questions or need assistance? <br/><br/>  Whether you’re curious about our services, need help with an order, or want advice on choosing the right solution, we’re here to help. Reach out to us anytime via email or phone, and our friendly team will respond promptly to ensure all your questions are answered. <br></br>Your satisfaction is our priority, and we’re always ready to provide guidance, support, or any information you need to make your experience smooth and enjoyable.
-    </p>
+   <p className="text-lg md:text-xl text-[#546274]">
+  Have any questions or need assistance?
+  <br /><br />
+  Whether you’re curious about our services, need help with an order, or would like advice on choosing the right solution, we’re here to help. Reach out to us anytime by email or phone, and our friendly team will respond promptly to ensure all your queries are answered.
+  <br /><br />
+  Your satisfaction is our priority, and we’re always ready to offer guidance, support, or any information you may need to make your experience smooth and enjoyable.
+</p>
+
         <div className="flex flex-col gap-6 ">
       <a
         href="mailto:contact@yourcompany.com"
@@ -100,7 +84,33 @@ export default async function Page() {
   </div>
 </section>
 
-
+        {/* ✅ Add ID for FAQ */}
+      <section id="faq" className="mt-20">
+  <Faq
+    items={[
+      {
+        q: "How does the platform work?",
+        a: "When a client fills out your form, their information is automatically captured by the system. Based on your setup, the platform then sends scheduled messages via email, WhatsApp, or SMS either instantly or at a time you choose.",
+      },
+      {
+        q: "Can I customize the messages sent to my clients?",
+        a: "Yes! You can fully personalize the content, sender name, and schedule of each message. You can also create different message templates for different campaigns or forms.",
+      },
+      {
+        q: "Does the platform support all countries and phone numbers?",
+        a: "Yes, our system supports international numbers and can send WhatsApp, SMS, and email messages globally, depending on your chosen communication channel and plan.",
+      },
+      {
+        q: "Is there a limit on how many messages I can send?",
+        a: "Message limits depend on your plan. Higher tiers offer bulk sending capabilities, while smaller plans are ideal for limited campaigns or small businesses.",
+      },
+      {
+        q: "Do I need technical skills to use the platform?",
+        a: "Not at all. The platform is built for simplicity—anyone can create, schedule, and track messages through an intuitive dashboard, with no coding required.",
+      },
+    ]}
+  />
+</section>
 
         <div className="h-12" />
       </main>

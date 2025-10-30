@@ -43,7 +43,7 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
   >
     <Image
       src="/images/logo.svg"
-      alt="C&A Retentions"
+      alt="C&A Retention"
       fill
       priority
       style={{ objectFit: "contain" }}
@@ -74,7 +74,7 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
 <Link href="/dashboard/" className="relative block w-[240px] h-[56px]">
   <Image
     src="/images/logo.svg"
-    alt="C&A Retentions"
+    alt="C&A Retention"
     fill
     priority
     style={{ objectFit: "contain" }}

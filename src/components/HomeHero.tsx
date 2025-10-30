@@ -20,20 +20,21 @@ export default function HomeHero() {
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-10 px-4 py-12 md:grid-cols-2 md:gap-12 md:py-16 lg:px-6">
         {/* Left: copy */}
         <div>
-          <div className="inline-flex items-center gap-2 rounded-full border border-[#D6E3EE] bg-white/70 px-3 py-1 text-xs text-[#2F4B6A] backdrop-blur">
-            ✅ Turn visitors into loyal customers automatically
-          </div>
+       <div className="inline-flex items-center gap-2 rounded-full border border-[#D6E3EE] bg-white/70 px-3 py-1 text-xs text-[#2F4B6A] backdrop-blur">
+  ✅ Turn visitors into loyal customers automatically
+</div>
 
-          <h1 className="mt-4 text-3xl font-bold tracking-tight text-[#1C2E4A] sm:text-4xl lg:text-5xl">
-            Capture via QR. <span className="text-[#3D6984]">Engage</span> with
-            scheduled SMS & email.
-          </h1>
+<h1 className="mt-4 text-3xl font-bold tracking-tight text-[#1C2E4A] sm:text-4xl lg:text-5xl">
+  Capture via QR. <span className="text-[#3D6984]">Engage</span> with
+  scheduled SMS, WhatsApp and email.
+</h1>
 
-          <p className="mt-4 max-w-xl text-[15px] leading-relaxed text-[#546274]">
-            Create a QR in one click, collect contacts on the spot, then send
-            personalized campaigns using your saved or custom templates. No
-            copy-pasting. No chaos. Just results.
-          </p>
+<p className="mt-4 max-w-xl text-[15px] leading-relaxed text-[#546274]">
+  Create a QR code in one click, collect contacts on the spot, then send
+  personalised campaigns using your saved or custom templates. No
+  copy-pasting. No chaos. Just results.
+</p>
+
 
           <div className="mt-6 flex flex-col gap-3 sm:flex-row sm:items-center">
             <Link

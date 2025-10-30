@@ -10,6 +10,7 @@ import {
   Mail,
   ChevronRight,
 } from "lucide-react";
+import { SiWhatsapp } from "react-icons/si"; // ✅ Added WhatsApp icon
 
 /* -------------------- fade-in on reveal (with stagger) -------------------- */
 function useReveal(delayMs = 0) {
@@ -20,7 +21,6 @@ function useReveal(delayMs = 0) {
     const el = ref.current;
     if (!el || typeof IntersectionObserver === "undefined") return;
 
-    // use the stable ref value
     el.style.transitionDelay = `${delayRef.current}ms`;
 
     const io = new IntersectionObserver(
@@ -38,15 +38,13 @@ function useReveal(delayMs = 0) {
 
     io.observe(el);
     return () => io.disconnect();
-  }, []); // <- stays constant
+  }, []);
 
   return ref;
 }
 
-
 /* -------------------- main section -------------------- */
 export default function HowItWorks() {
-  // stagger 0 / 80 / 160ms
   const r1 = useReveal(0);
   const r2 = useReveal(80);
   const r3 = useReveal(160);
@@ -67,15 +65,14 @@ export default function HowItWorks() {
         <Card ref={r1}>
           <Header
             icon={<QrCode className="h-6 w-6" />}
-            title="Create a QR in One Click"    
+            title="Create a QR Code in One Click"
             step="Step 1"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">
-            Generate a  QR and place it anywhere. Visitors scan and land
-            on your frictionless form.
+            Generate a QR code and place it anywhere. Visitors can scan and
+            access your seamless, hosted form instantly.
           </p>
           <ul className="mt-4 space-y-2 text-sm text-[#22384F]">
-          
             <li className="flex items-center gap-2">
               <span className="h-1.5 w-1.5 rounded-full bg-[#3D6984]" />
               Auto-hosted form page
@@ -91,12 +88,15 @@ export default function HowItWorks() {
             step="Step 2"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">
-            Every scan becomes a contact — email and/or phone — neatly organized
-            with tags and consent.
+            Every scan becomes a verified contact — email and/or phone —
+            neatly organised with tags and consent preferences.
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <Pill icon={<MessageSquare className="h-3.5 w-3.5" />}>SMS-ready</Pill>
-            <Pill icon={<Mail className="h-3.5 w-3.5" />}>Email-ready</Pill>
+            <Pill icon={<MessageSquare className="h-3.5 w-3.5" />}>SMS</Pill>
+            <Pill icon={<Mail className="h-3.5 w-3.5" />}>Email</Pill>
+            <Pill icon={<SiWhatsapp className="h-3.5 w-3.5 text-[#25D366]" />}>
+              WhatsApp
+            </Pill>
           </div>
         </Card>
 
@@ -108,8 +108,8 @@ export default function HowItWorks() {
             step="Step 3"
           />
           <p className="mt-2 text-sm text-[#5B6B7C]">
-            Choose a saved template or write a custom one. Send now or schedule
-            for later — SMS or email.
+            Choose a saved template or create your own. Send messages instantly
+            or schedule them for later via SMS, WhatsApp or email.
           </p>
           <div className="mt-4 flex items-center gap-2 rounded-xl border border-[#E6EEF5] bg-[#F7FAFD] px-3 py-2 text-xs text-[#22384F]">
             <CalendarClock className="h-4 w-4" />
@@ -131,20 +131,17 @@ export default function HowItWorks() {
 /* -------------------- small presentational pieces -------------------- */
 
 const Card = forwardRef<HTMLDivElement, { children: React.ReactNode }>(
-  ({ children }, ref) => {
-    return (
-      <div
-        ref={ref}
-        className="group relative rounded-2xl border border-[#E6EEF5] bg-white p-6 shadow-sm transition
-                   hover:shadow-lg hover:-translate-y-1 hover:border-[#DDE7F1]
-                   opacity-0 translate-y-6 duration-700 ease-out"
-      >
-        {/* subtle edge glow on hover */}
-        <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[0_0_0_0_rgba(61,105,132,0)] transition group-hover:shadow-[0_0_0_5px_rgba(61,105,132,0.08)]" />
-        {children}
-      </div>
-    );
-  }
+  ({ children }, ref) => (
+    <div
+      ref={ref}
+      className="group relative rounded-2xl border border-[#E6EEF5] bg-white p-6 shadow-sm transition
+                 hover:shadow-lg hover:-translate-y-1 hover:border-[#DDE7F1]
+                 opacity-0 translate-y-6 duration-700 ease-out"
+    >
+      <div className="pointer-events-none absolute inset-0 rounded-2xl shadow-[0_0_0_0_rgba(61,105,132,0)] transition group-hover:shadow-[0_0_0_5px_rgba(61,105,132,0.08)]" />
+      {children}
+    </div>
+  )
 );
 Card.displayName = "Card";
 

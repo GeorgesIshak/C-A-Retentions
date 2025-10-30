@@ -12,6 +12,8 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
   const appNav = [
     { name: "Dashboard", href: "/dashboard" },
     { name: "Profile", href: "/dashboard/profile" },
+        { name: "Home", href: "/" },
+
   ];
 
   return (

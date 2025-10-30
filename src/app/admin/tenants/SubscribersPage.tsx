@@ -13,8 +13,8 @@ export default function SubscribersPage({
   const [rows] = useState<SubscriberRow[]>(initialRows);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [subject, setSubject] = useState('Announcement from C&A Retentions');
-  const [body, setBody] = useState('Hello,\n\nWe have an update to share...\n\nBest regards,\nC&A Retentions');
+  const [subject, setSubject] = useState('Announcement from C&A Retention');
+  const [body, setBody] = useState('Hello,\n\nWe have an update to share...\n\nBest regards,\nC&A Retention');
   const [showList, setShowList] = useState(false);
 
   // Filter + derive status

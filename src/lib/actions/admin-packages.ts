@@ -7,6 +7,10 @@ import type { Package } from '@/types/packagePlan';
 const API_URL = process.env.BACKEND_API_URL!;
 if (!API_URL) throw new Error('BACKEND_API_URL is not defined');
 
+/* -------------------------------------------------------------------------- */
+/*                                Helpers                                     */
+/* -------------------------------------------------------------------------- */
+
 async function readErr(res: Response, fallback: string): Promise<string> {
   try {
     const ct = res.headers.get('content-type') || '';
@@ -35,14 +39,14 @@ const toOptStr = (v: FormDataEntryValue | null | undefined) => {
   return s.length ? s : undefined;
 };
 
-/** Read a boolean from a form: true only if a true-ish value is present */
+/** Read a boolean from a form */
 function formBool(fd: FormData, name: string, defaultValue = false) {
-  const vals = fd.getAll(name).map(v => String(v).toLowerCase());
+  const vals = fd.getAll(name).map((v) => String(v).toLowerCase());
   if (vals.length === 0) return defaultValue;
-  return vals.some(v => v === 'true' || v === 'on' || v === '1' || v === 'yes');
+  return vals.some((v) => v === 'true' || v === 'on' || v === '1' || v === 'yes');
 }
 
-/** Normalize BE payloads -> Package */
+/** Normalise BE payloads -> Package */
 function normalizePackage(raw: any): Package {
   return {
     id: String(raw.id),
@@ -59,23 +63,27 @@ function normalizePackage(raw: any): Package {
   };
 }
 
-/** === CREATE PACKAGE (ADMIN ONLY) === */
-export async function createPackage(formData: FormData): Promise<Package> {
+/* -------------------------------------------------------------------------- */
+/*                              Admin: Packages                               */
+/* -------------------------------------------------------------------------- */
+
+/** === CREATE PACKAGE === */
+export async function createPackage(formData: FormData) {
   const token = (await cookies()).get('accessToken')?.value;
-  if (!token) throw new Error('Missing access token — please log in first.');
+  if (!token) return { ok: false, error: 'Missing access token — please log in first.' };
 
   const priceId = toOptStr(formData.get('priceId'));
-  if (!priceId) throw new Error('Stripe priceId is required.');
+  if (!priceId) return { ok: false, error: 'Stripe priceId is required.' };
 
-  const body: Record<string, any> = {
+  const body = {
     name: String(formData.get('name') ?? '').trim(),
     description: String(formData.get('description') ?? '').trim(),
     durationDays: toInt(formData.get('durationDays'), 0),
     smsCount: toInt(formData.get('smsCount'), 0),
     emailCount: toInt(formData.get('emailCount'), 0),
     price: toNum(formData.get('price'), 0),
-    isActive: formBool(formData, 'isActive', false),  // ← fixed
-    priceId,                                          // ← required
+    isActive: formBool(formData, 'isActive', false),
+    priceId,
   };
 
   const res = await fetch(`${API_URL}/packages`, {
@@ -90,16 +98,17 @@ export async function createPackage(formData: FormData): Promise<Package> {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to create package.');
-    throw new Error(msg);
+    return { ok: false, error: msg };
   }
 
   const json: any = await res.json().catch(() => ({}));
   const raw = json?.data ?? json;
-  return normalizePackage(raw);
+  return { ok: true, data: normalizePackage(raw) };
 }
 
-/** === LIST PACKAGES (supports filters) === */
+/** === LIST PACKAGES === */
 type ListParams = { active?: boolean; page?: number; limit?: number };
+
 export async function listPackages(params?: ListParams): Promise<Package[]> {
   const url = new URL(`${API_URL}/packages`);
   if (params?.active !== undefined) url.searchParams.set('active', String(params.active));
@@ -110,18 +119,20 @@ export async function listPackages(params?: ListParams): Promise<Package[]> {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to fetch packages.');
-    throw new Error(msg);
+    console.error('listPackages error:', msg);
+    return [];
   }
 
-  const json: any = await res.json().catch(() => ([]));
-  const list = Array.isArray(json) ? json : (json?.data ?? []);
+  const json: any = await res.json().catch(() => []);
+  const list = Array.isArray(json) ? json : json?.data ?? [];
   return (list as any[]).map(normalizePackage);
 }
 
-/** === DELETE PACKAGE (ADMIN ONLY) === */
+
+/** === DELETE PACKAGE === */
 export async function deletePackage(id: string) {
   const token = (await cookies()).get('accessToken')?.value;
-  if (!token) throw new Error('Missing access token — please log in first.');
+  if (!token) return { ok: false, error: 'Missing access token — please log in first.' };
 
   const res = await fetch(`${API_URL}/packages/${id}`, {
     method: 'DELETE',
@@ -131,13 +142,13 @@ export async function deletePackage(id: string) {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to delete package.');
-    throw new Error(msg);
+    return { ok: false, error: msg };
   }
 
-  return true;
+  return { ok: true };
 }
 
-/** === UPDATE PACKAGE (ADMIN ONLY) === */
+/** === UPDATE PACKAGE === */
 export async function updatePackage(
   id: string,
   payload:
@@ -155,39 +166,37 @@ export async function updatePackage(
           | 'priceId'
         >
       >
-): Promise<Package> {
+) {
   const token = (await cookies()).get('accessToken')?.value;
-  if (!token) throw new Error('Missing access token — please log in first.');
+  if (!token) return { ok: false, error: 'Missing access token — please log in first.' };
 
-  const body =
-    payload instanceof FormData
-      ? (() => {
-          const b: Record<string, any> = {
-            name: toOptStr(payload.get('name')),
-            description: toOptStr(payload.get('description')),
-            durationDays: payload.get('durationDays') != null ? toInt(payload.get('durationDays')) : undefined,
-            smsCount: payload.get('smsCount') != null ? toInt(payload.get('smsCount')) : undefined,
-            emailCount: payload.get('emailCount') != null ? toInt(payload.get('emailCount')) : undefined,
-            price: payload.get('price') != null ? toNum(payload.get('price')) : undefined,
-            isActive: formBool(payload, 'isActive', false), // ← fixed
-            priceId: toOptStr(payload.get('priceId')),      // ← editable
-          };
-          // Enforce priceId required on update if the field is present but empty
-          if ('priceId' in b && (b.priceId === undefined || b.priceId === '')) {
-            throw new Error('Stripe priceId is required.');
-          }
-          return b;
-        })()
-      : {
-          ...(payload.name !== undefined ? { name: String(payload.name).trim() } : {}),
-          ...(payload.description !== undefined ? { description: String(payload.description).trim() } : {}),
-          ...(payload.durationDays !== undefined ? { durationDays: Number(payload.durationDays) | 0 } : {}),
-          ...(payload.smsCount !== undefined ? { smsCount: Number(payload.smsCount) | 0 } : {}),
-          ...(payload.emailCount !== undefined ? { emailCount: Number(payload.emailCount) | 0 } : {}),
-          ...(payload.price !== undefined ? { price: Number(payload.price) || 0 } : {}),
-          ...(payload.isActive !== undefined ? { isActive: Boolean(payload.isActive) } : {}),
-          ...(payload.priceId !== undefined ? { priceId: String(payload.priceId) } : {}),
-        };
+  let body: Record<string, any> = {};
+  try {
+    body =
+      payload instanceof FormData
+        ? (() => {
+            const b: Record<string, any> = {
+              name: toOptStr(payload.get('name')),
+              description: toOptStr(payload.get('description')),
+              durationDays:
+                payload.get('durationDays') != null ? toInt(payload.get('durationDays')) : undefined,
+              smsCount:
+                payload.get('smsCount') != null ? toInt(payload.get('smsCount')) : undefined,
+              emailCount:
+                payload.get('emailCount') != null ? toInt(payload.get('emailCount')) : undefined,
+              price: payload.get('price') != null ? toNum(payload.get('price')) : undefined,
+              isActive: formBool(payload, 'isActive', false),
+              priceId: toOptStr(payload.get('priceId')),
+            };
+            if ('priceId' in b && (b.priceId === undefined || b.priceId === '')) {
+              throw new Error('Stripe priceId is required.');
+            }
+            return b;
+          })()
+        : payload;
+  } catch (err: any) {
+    return { ok: false, error: err.message };
+  }
 
   const res = await fetch(`${API_URL}/packages/${id}`, {
     method: 'PATCH',
@@ -201,28 +210,29 @@ export async function updatePackage(
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to update package.');
-    throw new Error(msg);
+    return { ok: false, error: msg };
   }
 
   const json: any = await res.json().catch(() => ({}));
   const raw = json?.data ?? json;
-  return normalizePackage(raw);
+  return { ok: true, data: normalizePackage(raw) };
 }
 
-
-/* ===================== SUBSCRIBERS (with pagination) ===================== */
+/* -------------------------------------------------------------------------- */
+/*                              Subscribers                                   */
+/* -------------------------------------------------------------------------- */
 
 export type SubscriberPayment = {
   id: string;
   packageName: string | null;
-  expiryDate: string | null;   // ISO
+  expiryDate: string | null;
 };
 
 export type Subscriber = {
   id: string;
   email: string;
   emailVerified: boolean;
-  createdAt: string;           // ISO
+  createdAt: string;
   payments: SubscriberPayment[];
 };
 
@@ -241,33 +251,22 @@ function normalizeSubscriber(raw: any): Subscriber {
   };
 }
 
-/** Returned shape that matches your BE pagination */
-export type SubscriberListPage = {
-  items: Subscriber[];
-  total: number;
-  totalPages: number;
-  currentPage: number;
-};
-
-/** === LIST SUBSCRIBERS (paginated) ===
- * Matches the BE response you sent:
- * { data: [...], total, totalPages, currentPage }
- */
+/** Paginated list */
 export async function listSubscribersPage(params?: {
   page?: number;
   limit?: number;
   search?: string;
   email?: string;
   emailVerified?: boolean;
-}): Promise<SubscriberListPage> {
+}) {
   const token = (await cookies()).get('accessToken')?.value;
-  if (!token) throw new Error('Missing access token — please log in first.');
+  if (!token) return { ok: false, error: 'Missing access token — please log in first.' };
 
   const url = new URL(`${API_URL}/users/subscribers`);
-  if (params?.page != null)  url.searchParams.set('page', String(params.page));
+  if (params?.page != null) url.searchParams.set('page', String(params.page));
   if (params?.limit != null) url.searchParams.set('limit', String(params.limit));
-  if (params?.search)        url.searchParams.set('search', params.search);
-  if (params?.email)         url.searchParams.set('email', params.email);
+  if (params?.search) url.searchParams.set('search', params.search);
+  if (params?.email) url.searchParams.set('email', params.email);
   if (params?.emailVerified !== undefined) {
     url.searchParams.set('emailVerified', String(params.emailVerified));
   }
@@ -280,35 +279,24 @@ export async function listSubscribersPage(params?: {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to fetch subscribers.');
-    throw new Error(msg);
+    return { ok: false, error: msg };
   }
 
   const json: any = await res.json().catch(() => ({}));
   const data = Array.isArray(json?.data) ? json.data : [];
   return {
-    items: data.map(normalizeSubscriber),
+    ok: true,
+    data: data.map(normalizeSubscriber),
     total: Number(json?.total ?? data.length) || 0,
     totalPages: Number(json?.totalPages ?? 1) || 1,
     currentPage: Number(json?.currentPage ?? 1) || 1,
   };
 }
 
-/** === Convenience: just return the array (first page by default) === */
-export async function listSubscribers(params?: {
-  page?: number;
-  limit?: number;
-  search?: string;
-  email?: string;
-  emailVerified?: boolean;
-}): Promise<Subscriber[]> {
-  const page = await listSubscribersPage(params);
-  return page.items;
-}
-
-/** === Optional: get a single subscriber by id === */
-export async function getSubscriber(id: string): Promise<Subscriber> {
+/** Get single subscriber */
+export async function getSubscriber(id: string) {
   const token = (await cookies()).get('accessToken')?.value;
-  if (!token) throw new Error('Missing access token — please log in first.');
+  if (!token) return { ok: false, error: 'Missing access token — please log in first.' };
 
   const res = await fetch(`${API_URL}/users/subscribers/${id}`, {
     method: 'GET',
@@ -318,10 +306,10 @@ export async function getSubscriber(id: string): Promise<Subscriber> {
 
   if (!res.ok) {
     const msg = await readErr(res, 'Failed to fetch subscriber.');
-    throw new Error(msg);
+    return { ok: false, error: msg };
   }
 
   const json: any = await res.json().catch(() => ({}));
   const raw = json?.data ?? json;
-  return normalizeSubscriber(raw);
+  return { ok: true, data: normalizeSubscriber(raw) };
 }

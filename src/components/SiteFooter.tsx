@@ -23,11 +23,7 @@ export default function Footer() {
           />
         </Link>
 
-        <p className="max-w-2xl text-sm leading-relaxed text-[#334155]">
-          C&amp;A Retention helps your business capture, nurture, and retain
-          customers with streamlined tools for packages, messaging, and analytics—
-          without the busywork. Built to be fast, clear, and effective.
-        </p>
+     
       </div>
 
       {/* Middle: Menu + Contact */}
@@ -49,11 +45,7 @@ export default function Footer() {
               Faq
             </Link>
           </li>
-          <li>
-            <Link href="/#contact" className="hover:opacity-80 transition">
-              Contact
-            </Link>
-          </li>
+         
         </ul>
 
         {/* Contact Icons */}
