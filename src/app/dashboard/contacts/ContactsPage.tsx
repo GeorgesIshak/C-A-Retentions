@@ -1,10 +1,11 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 // app/dashboard/contacts/ContactsPage.tsx
 "use client";
 
 import React, { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { sendMessage, type FrontendMessageType } from "@/lib/actions/subscription";
+import { sendMessage } from "@/lib/actions/subscription";
 
 type Contact = {
   id: string;
