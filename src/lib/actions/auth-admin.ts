@@ -56,12 +56,21 @@ export async function loginAdmin(formData: FormData) {
   }
 
   // ---- New login request
-  const res = await fetch(`${API_URL}/auth/login`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
-    cache: 'no-store',
-  });
+  let res: Response;
+  try {
+    res = await fetch(`${API_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password }),
+      cache: 'no-store',
+    });
+  } catch (err) {
+    // 🛑 Network / backend down
+    redirect(
+      '/admin-login?error=' +
+        encodeURIComponent('Cannot reach server. Please check your connection and try again.')
+    );
+  }
 
   if (!res.ok) {
     const msg = await readErr(res, 'Login failed.');
@@ -106,6 +115,7 @@ export async function loginAdmin(formData: FormData) {
 
   redirect(next || '/admin');
 }
+
 /** LOGOUT → clear cookies and set a one-time flash message */
 export async function logout() {
   const jar = await cookies();
@@ -121,7 +131,9 @@ export async function logout() {
       },
       cache: 'no-store',
     });
-  } catch {}
+  } catch {
+    // if backend is down, we just clear cookies locally anyway
+  }
 
   // clear session cookies
   jar.delete('accessToken');
@@ -135,5 +147,4 @@ export async function logout() {
     secure: process.env.NODE_ENV === 'production',
     maxAge: 60, // 1 minute
   });
-
 }

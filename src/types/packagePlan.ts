@@ -5,6 +5,7 @@ export type Package = {
   durationDays: number;
   smsCount: number;
   emailCount: number;
+  whatsappCount: number;
   price: number;           // keep as number client-side
   isActive: boolean;
   createdAt: string;       // ISO

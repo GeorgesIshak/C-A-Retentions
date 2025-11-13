@@ -4,11 +4,17 @@
 
 import { useState } from 'react';
 import { submitGuest } from '@/lib/actions/guest';
+import { PhoneInput } from 'react-international-phone';
+import 'react-international-phone/style.css';
 
 export default function GuestFormClient({ uid }: { uid: string }) {
   const [successName, setSuccessName] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [phone, setPhone] = useState('');
+
+  // Remove spaces/dashes before sending
+  const normalizedPhone = phone.replace(/\s|-/g, '');
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -16,8 +22,8 @@ export default function GuestFormClient({ uid }: { uid: string }) {
     setErrorMsg(null);
 
     const formData = new FormData(e.currentTarget);
-    // ensure uid is included (hidden input also does this)
     if (!formData.get('uid') && uid) formData.set('uid', uid);
+    formData.set('phoneNumber', normalizedPhone);
 
     try {
       const result = await submitGuest(formData);
@@ -39,16 +45,21 @@ export default function GuestFormClient({ uid }: { uid: string }) {
           </h3>
         </div>
 
-        {/* Success message */}
         {successName ? (
           <div className="rounded-md bg-green-50 p-4 text-center animate-fadeIn">
-            <p className="text-lg font-semibold text-green-700">✅ Thank you, {successName}!</p>
-            <p className="text-sm text-green-600 mt-1">Your information has been sent successfully.</p>
+            <p className="text-lg font-semibold text-green-700">
+              ✅ Thank you, {successName}!
+            </p>
+            <p className="text-sm text-green-600 mt-1">
+              Your information has been sent successfully.
+            </p>
           </div>
         ) : (
           <>
             {errorMsg && (
-              <div className="mb-4 rounded-md bg-rose-50 p-3 text-sm text-rose-800">❌ {errorMsg}</div>
+              <div className="mb-4 rounded-md bg-rose-50 p-3 text-sm text-rose-800">
+                ❌ {errorMsg}
+              </div>
             )}
 
             {!uid && (
@@ -60,18 +71,20 @@ export default function GuestFormClient({ uid }: { uid: string }) {
             <form onSubmit={handleSubmit} className="space-y-4">
               <input type="hidden" name="uid" value={uid} />
 
+              {/* Full Name */}
               <div>
                 <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
-                  User Name
+                  Full Name
                 </label>
                 <input
                   name="fullName"
                   required
-                  placeholder="Enter username"
-  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                  placeholder="Enter full name"
+                  className="input"
                 />
               </div>
 
+              {/* Email */}
               <div>
                 <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
                   Email
@@ -80,27 +93,43 @@ export default function GuestFormClient({ uid }: { uid: string }) {
                   type="email"
                   name="email"
                   placeholder="Enter email"
-  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                  className="input"
                 />
               </div>
 
+              {/* Phone (styled like .input) */}
               <div>
                 <label className="block text-[15px] font-semibold text-[#22384F] mb-1.5">
                   Phone Number
                 </label>
-                <input
-                  name="phoneNumber"
-                  placeholder="Enter phone number"
-  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                <PhoneInput
+                  defaultCountry="gb" // 🇬🇧 UK
+                  value={phone}
+                  onChange={setPhone}
+                  inputClassName="input"
+                  countrySelectorStyleProps={{
+                    buttonClassName:
+                      'border border-[#E6EEF5] rounded-l-full px-3 py-2 bg-white',
+                  }}
+                  inputProps={{
+                    inputMode: 'tel',
+                    autoComplete: 'tel',
+                    name: 'phoneNumber',
+                    'aria-label': 'Phone number',
+                  }}
                 />
+
+                {/* Hidden normalized input */}
+                <input type="hidden" name="phoneNumber" value={normalizedPhone} />
               </div>
 
+              {/* Submit */}
               <button
                 type="submit"
                 disabled={loading}
-  className="w-full rounded-full bg-[#F6F8FB] border border-[#E6EEF5] px-4 py-3 text-[16px] sm:text-[14px] text-[#0F1F33] placeholder:text-[#9AA9B8] outline-none focus:border-[#3D6984] focus:ring-2 focus:ring-[#E8F1F7]"
+                className="w-full rounded-full bg-[#3D6984] text-white px-4 py-3 text-[16px] font-semibold hover:bg-[#30556A] transition-colors"
               >
-                {loading ? 'Submitting...' : 'Submit'}
+                {loading ? 'Submitting…' : 'Submit'}
               </button>
             </form>
           </>

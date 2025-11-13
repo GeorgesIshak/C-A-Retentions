@@ -152,7 +152,7 @@ export default async function AdminPackages({
                 <div className="text-[#2F4B6A]">{p.durationDays} days</div>
 
                 <div className="text-[#2F4B6A]">
-                  {p.smsCount} SMS / {p.emailCount} emails
+                  {p.smsCount} SMS /  {p.whatsappCount} whatsapp / {p.emailCount} emails
                 </div>
 
                 <div className="text-xs text-[#6B7C8F] truncate max-w-[220px]" title={p.priceId ?? ''}>
@@ -214,7 +214,7 @@ export default async function AdminPackages({
                   <div className="col-span-2">
                     <div className="text-xs text-[#6B7C8F]">Quota</div>
                     <div className="font-medium">
-                      {p.smsCount} SMS / {p.emailCount}
+                      {p.smsCount} SMS / {p.whatsappCount} Whatsapp /{p.emailCount}
                     </div>
                   </div>
                   <div className="col-span-2">
@@ -241,11 +241,12 @@ export default async function AdminPackages({
             </div>
 
             <form action={createPkgAction} className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <input name="name" placeholder="Package name" className="border border-[#CAD7E5] p-2 rounded sm:col-span-2" required />
+              <input name="name" placeholder="Package name" className="border border-[#CAD7E5] p-2 rounded " required />
               <input name="durationDays" type="number" placeholder="Duration (days)" className="border border-[#CAD7E5] p-2 rounded" required />
-              <input name="price" type="number" step="0.01" placeholder="Price ($)" className="border border-[#CAD7E5] p-2 rounded" required />
+              <input name="price" type="number" step="0.01" placeholder="Price (£)" className="border border-[#CAD7E5] p-2 rounded" required />
               <input name="smsCount" type="number" placeholder="SMS count" className="border border-[#CAD7E5] p-2 rounded" required />
-              <input name="emailCount" type="number" placeholder="Email count" className="border border-[#CAD7E5] p-2 rounded" required />
+              <input name="whatsappCount" type="number" placeholder="whatsapp count" className="border border-[#CAD7E5] p-2 rounded" required />
+              <input name="emailCount" type="number" placeholder="Email count" className="border border-[#CAD7E5] p-2 rounded " required />
               <input name="description" placeholder="Short description" className="border border-[#CAD7E5] p-2 rounded sm:col-span-2" />
               {/* REQUIRED Stripe price id */}
               <input
@@ -293,9 +294,11 @@ export default async function AdminPackages({
 
               <input name="durationDays" type="number" defaultValue={pkgToEdit.durationDays} placeholder="Duration (days)" className="border border-[#CAD7E5] p-2 rounded" required />
 
-              <input name="price" type="number" step="0.01" defaultValue={Number(pkgToEdit.price ?? 0)} placeholder="Price ($)" className="border border-[#CAD7E5] p-2 rounded" required />
+              <input name="price" type="number" step="0.01" defaultValue={Number(pkgToEdit.price ?? 0)} placeholder="Price (£)" className="border border-[#CAD7E5] p-2 rounded" required />
 
               <input name="smsCount" type="number" defaultValue={pkgToEdit.smsCount} placeholder="SMS count" className="border border-[#CAD7E5] p-2 rounded" required />
+              
+              <input name="whatsappCount" type="number" defaultValue={pkgToEdit.whatsappCount} placeholder="whatsapp count" className="border border-[#CAD7E5] p-2 rounded" required />
 
               <input name="emailCount" type="number" defaultValue={pkgToEdit.emailCount} placeholder="Email count" className="border border-[#CAD7E5] p-2 rounded" required />
 

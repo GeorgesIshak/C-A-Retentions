@@ -40,6 +40,8 @@ export default async function ProfilePage() {
 
   const smsCurrent = profile?.smsCurrent ?? 0;
   const smsTotal = profile?.smsTotal ?? 0;
+  const whatsappCurrent = profile?.whatsappCurrent ?? 0;
+  const whatsappTotal = profile?.whatsappTotal ?? 0;
   const emailCurrent = profile?.emailCurrent ?? 0;
   const emailTotal = profile?.emailTotal ?? 0;
   const expiryDate = profile?.expiryDate
@@ -58,80 +60,101 @@ export default async function ProfilePage() {
         <ClientQr userId={userId} /> {/* Button + QR modal */}
       </div>
 
-      {/* Profile block (editable form) */}
-      <section className="rounded-2xl border border-[#E6EEF5] bg-white p-5">
-        <form action={updateProfileAction} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {/* Business Name (editable) */}
-            <Field label="Business Name">
-              <input
-                name="businessName"
-                className="input"
-                defaultValue={businessName}
-                placeholder="Your business name"
-              />
-            </Field>
+{/* Profile block (editable form) */}
+<section className="rounded-2xl border border-[#E6EEF5] bg-white p-6">
+  <form action={updateProfileAction} className="space-y-8">
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-10">
+      
+      <div>
+        <h3 className="text-sm font-semibold text-[#1C2E4A] mb-3 uppercase tracking-wide">
+          Personal & Business Info
+        </h3>
 
-            {/* User Name (editable) */}
-            <Field label="User Name">
-              <input
-                name="fullName"
-                className="input"
-                defaultValue={name}
-                placeholder="Your name"
-              />
-            </Field>
+        <div className="grid grid-cols-1 gap-6">
+          <Field label="Full Name">
+            <input
+              name="fullName"
+              className="input"
+              defaultValue={name}
+              placeholder="Your name"
+            />
+          </Field>
 
-            {/* Email (read-only; backend doesn't update via this route) */}
-            <Field label="Email">
-              <input
-                type="email"
-                className="input"
-                defaultValue={email}
-                disabled
-              />
-            </Field>
+          <Field label="Business Name">
+            <input
+              name="businessName"
+              className="input"
+              defaultValue={businessName}
+              placeholder="Your business name"
+            />
+          </Field>
 
-            {/* Phone Number (editable) */}
-            <Field label="Phone Number">
-              <input
-                name="phoneNumber"
-                className="input"
-                defaultValue={phone}
-                placeholder="+961..."
-              />
-            </Field>
+          <Field label="Email">
+            <input
+              type="email"
+              className="input"
+              defaultValue={email}
+              disabled
+            />
+          </Field>
 
-            <Field label="SMS Contact Counter">
-              <div className="flex items-center gap-3">
-                <div className="input">{smsCurrent}</div>
-                <div className="text-xs text-[#7B8896]">of {smsTotal}</div>
-              </div>
-            </Field>
+          <Field label="Phone Number">
+            <input
+              name="phoneNumber"
+              className="input"
+              defaultValue={phone}
+              placeholder="+961..."
+            />
+          </Field>
+        </div>
+      </div>
 
-            <Field label="Email Contact Counter">
-              <div className="flex items-center gap-3">
-                <div className="input">{emailCurrent}</div>
-                <div className="text-xs text-[#7B8896]">of {emailTotal}</div>
-              </div>
-            </Field>
+      <div className="border-t lg:border-t-0 lg:border-l border-[#E6EEF5] pt-6 lg:pt-0 lg:pl-10">
+        <h3 className="text-sm font-semibold text-[#1C2E4A] mb-3 uppercase tracking-wide">
+          Subscription Details
+        </h3>
 
-            <Field label="Plan Expiry Date" className="md:col-span-3">
-              <div className="input">{expiryDate}</div>
-            </Field>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-1 gap-6">
+          <Field label="SMS Contact Counter">
+            <div className="flex items-center gap-2">
+              <div className="input">{smsCurrent}</div>
+              <div className="text-xs text-[#7B8896]">of {smsTotal}</div>
+            </div>
+          </Field>
+           <Field label="Whatsapp Contact Counter">
+            <div className="flex items-center gap-2">
+              <div className="input">{whatsappCurrent}</div>
+              <div className="text-xs text-[#7B8896]">of {whatsappTotal}</div>
+            </div>
+          </Field>
 
-          {/* Save button */}
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] text-sm px-6 py-2.5  text-white font-medium hover:opacity-95 transition"
-            >
-              Save changes
-            </button>
-          </div>
-        </form>
-      </section>
+          <Field label="Email Contact Counter">
+            <div className="flex items-center gap-2">
+              <div className="input">{emailCurrent}</div>
+              <div className="text-xs text-[#7B8896]">of {emailTotal}</div>
+            </div>
+          </Field>
+
+          <Field label="Plan Expiry Date">
+            <div className="input">{expiryDate}</div>
+          </Field>
+        </div>
+      </div>
+    </div>
+
+    {/* --- Submit Button --- */}
+    <div className="flex justify-end pt-6 border-t border-[#E6EEF5] mt-8">
+      <button
+        type="submit"
+        className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] text-sm px-6 py-2.5 text-white font-medium hover:opacity-95 transition"
+      >
+        Save changes
+      </button>
+    </div>
+  </form>
+</section>
+
+
 
       {/* 📨 Template Editors */}
       <section>

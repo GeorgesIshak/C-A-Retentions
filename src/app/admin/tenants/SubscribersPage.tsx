@@ -1,8 +1,10 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 // app/dashboard/subscribers/SubscribersPage.tsx
 'use client';
 
 import React, { useMemo, useState } from 'react';
 import type { SubscriberRow } from './page';
+import { sendAdminEmails } from '@/lib/actions/admin-packages';
 
 export default function SubscribersPage({
   initialRows,
@@ -13,9 +15,7 @@ export default function SubscribersPage({
   const [rows] = useState<SubscriberRow[]>(initialRows);
   const [query, setQuery] = useState('');
   const [selected, setSelected] = useState<Record<string, boolean>>({});
-  const [subject, setSubject] = useState('Announcement from C&A Retention');
-  const [body, setBody] = useState('Hello,\n\nWe have an update to share...\n\nBest regards,\nC&A Retention');
-  const [showList, setShowList] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Filter + derive status
   const derived = useMemo(() => {
@@ -32,18 +32,22 @@ export default function SubscribersPage({
 
   // Selection helpers
   const filteredIds = useMemo(() => derived.map((r) => r.id), [derived]);
+
   const selectedCount = useMemo(
     () => filteredIds.reduce((acc, id) => acc + (selected[id] ? 1 : 0), 0),
     [filteredIds, selected]
   );
+
   const allFilteredSelected = useMemo(
     () => filteredIds.length > 0 && filteredIds.every((id) => selected[id]),
     [filteredIds, selected]
   );
+
   const someFilteredSelected = useMemo(
     () => filteredIds.some((id) => selected[id]),
     [filteredIds, selected]
   );
+
   const selectedEmails = useMemo(
     () => derived.filter((r) => selected[r.id]).map((r) => r.email),
     [derived, selected]
@@ -65,53 +69,13 @@ export default function SubscribersPage({
     });
   }
 
-  function clearSelection() {
-    setSelected((prev) => {
-      const next = { ...prev };
-      for (const id of filteredIds) next[id] = false;
-      return next;
-    });
-  }
-
-  function handleSendAnnouncement() {
-    if (selectedEmails.length === 0) return;
-
-    const bcc = selectedEmails.join(',');
-    const mailto =
-      `mailto:?` +
-      `bcc=${encodeURIComponent(bcc)}` +
-      `&subject=${encodeURIComponent(subject)}` +
-      `&body=${encodeURIComponent(body)}`;
-
-    if (mailto.length > 1900) {
-      const list = selectedEmails.join(', ');
-      navigator.clipboard
-        .writeText(list)
-        .then(() => {
-          alert(
-            `There are too many recipients for a single mailto link.\n\n` +
-              `All selected emails were copied to your clipboard.\n` +
-              `Open your email client and paste them into the BCC field.\n\n` +
-              `Subject:\n${subject}\n\n` +
-              `Body:\n${body}`
-          );
-        })
-        .catch(() => {
-          alert(`Too many recipients for mailto and copy failed. Please try again.`);
-        });
-      return;
-    }
-
-    window.location.href = mailto;
-  }
-
   return (
     <main className="mx-auto max-w-7xl">
-      {/* Title + Search */}
-      <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:items-center">
+      {/* Top bar: title + search + send button */}
+      <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between mb-4">
         <h1 className="text-[28px] font-bold text-[#0F1F33]">Subscribers</h1>
 
-        <div className="flex justify-start md:justify-end">
+        <div className="flex flex-1 flex-col gap-2 md:flex-row md:items-center md:justify-end">
           <div className="flex w-full max-w-sm items-center gap-2">
             <label htmlFor="sub-search" className="sr-only">
               Search by email or package
@@ -134,101 +98,26 @@ export default function SubscribersPage({
               </button>
             )}
           </div>
+
+          <div className="flex items-center justify-between md:justify-end gap-2">
+            <span className="text-xs md:text-sm text-[#6B7C8F]">
+              Selected:&nbsp;
+              <span className="font-semibold text-[#0F1F33]">{selectedCount}</span>
+            </span>
+            <button
+              type="button"
+              disabled={selectedCount === 0}
+              onClick={() => setIsDialogOpen(true)}
+              className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-sm text-white disabled:opacity-40"
+            >
+              Send Announcement
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Announcement (stacked, comfy spacing) */}
-      <section className="mt-5 rounded-2xl border border-[#E6EEF5] bg-white p-5">
-        <div className="mb-4">
-          <h2 className="text-lg font-semibold text-[#0F1F33]">Send Announcement</h2>
-          <p className="mt-1 text-sm text-[#6B7C8F]">
-            Select recipients from the table below, then compose your subject and message.
-          </p>
-        </div>
-
-        {/* Selection block (stacked) */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <div className="text-sm text-[#0F1F33]">
-              Selected:&nbsp;<span className="font-semibold">{selectedCount}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={toggleSelectAllFiltered}
-                className="rounded-full border border-[#D6E3EE] px-3 py-2 text-sm hover:bg-[#F1F6FA]"
-              >
-                {allFilteredSelected ? 'Unselect all (filtered)' : 'Select all (filtered)'}
-              </button>
-              {someFilteredSelected && (
-                <button
-                  onClick={clearSelection}
-                  className="rounded-full border border-[#D6E3EE] px-3 py-2 text-sm hover:bg-[#F1F6FA]"
-                >
-                  Clear selection
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Optional: collapsible preview of selected emails */}
-          {someFilteredSelected && (
-            <div className="rounded-xl border border-[#E6EEF5] bg-[#F8FBFE] p-3">
-              <button
-                type="button"
-                onClick={() => setShowList((v) => !v)}
-                className="w-full text-left text-sm text-[#0F1F33] underline underline-offset-2 hover:opacity-80"
-              >
-                {showList ? 'Hide selected recipients' : 'Show selected recipients'}
-              </button>
-              {showList && (
-                <div className="mt-2 max-h-32 overflow-auto text-sm text-[#2F4B6A]">
-                  {selectedEmails.join(', ')}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Subject (full width) */}
-        <div className="mt-5">
-          <label className="mb-1 block text-sm font-medium text-[#0F1F33]">Subject</label>
-          <input
-            value={subject}
-            onChange={(e) => setSubject(e.target.value)}
-            placeholder="Email subject"
-            className="w-full rounded-xl border border-[#D6E3EE] bg-white px-3 py-2 text-sm text-[#0F1F33] outline-none focus:border-[#3D6984]"
-          />
-        </div>
-
-        {/* Body (full width, taller) */}
-        <div className="mt-4">
-          <label className="mb-1 block text-sm font-medium text-[#0F1F33]">Message</label>
-          <textarea
-            value={body}
-            onChange={(e) => setBody(e.target.value)}
-            placeholder="Write your announcement…"
-            className="w-full min-h-[140px] rounded-xl border border-[#D6E3EE] bg-white px-3 py-2 text-sm text-[#0F1F33] outline-none focus:border-[#3D6984]"
-          />
-          <p className="mt-1 text-xs text-[#7B8896]">
-            Tip: long recipient lists may open your email client without BCC (we’ll copy BCC to your clipboard if needed).
-          </p>
-        </div>
-
-        {/* Primary action (full width, stacked) */}
-        <div className="mt-5">
-          <button
-            onClick={handleSendAnnouncement}
-            disabled={selectedCount === 0}
-            className="w-full rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-3 text-white text-[15px] font-medium shadow hover:opacity-95 disabled:opacity-50"
-            title="Open your email client with BCC of selected emails"
-          >
-            Send Announcement
-          </button>
-        </div>
-      </section>
-
       {/* Table */}
-      <div className="mt-5 overflow-x-auto rounded-2xl border border-[#E6EEF5] bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-[#E6EEF5] bg-white">
         <table className="min-w-full border-collapse" role="table" aria-label="Subscribers">
           <thead className="bg-[#F1F6FA] sticky top-0 z-10">
             <tr>
@@ -239,7 +128,8 @@ export default function SubscribersPage({
                     aria-label="Select all filtered"
                     checked={allFilteredSelected}
                     ref={(el) => {
-                      if (el) el.indeterminate = !allFilteredSelected && someFilteredSelected;
+                      if (el)
+                        el.indeterminate = !allFilteredSelected && someFilteredSelected;
                     }}
                     onChange={toggleSelectAllFiltered}
                   />
@@ -256,7 +146,11 @@ export default function SubscribersPage({
           <tbody>
             {derived.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-5 py-6 text-sm text-[#7B8896]" aria-live="polite">
+                <td
+                  colSpan={6}
+                  className="px-5 py-6 text-sm text-[#7B8896]"
+                  aria-live="polite"
+                >
                   {query ? 'No results match your search.' : 'Table is empty.'}
                 </td>
               </tr>
@@ -264,7 +158,9 @@ export default function SubscribersPage({
               derived.map((r, i) => (
                 <tr
                   key={r.id}
-                  className={`hover:bg-[#F8FBFE] ${i !== derived.length - 1 ? 'border-b border-[#E6EEF5]' : ''}`}
+                  className={`hover:bg-[#F8FBFE] ${
+                    i !== derived.length - 1 ? 'border-b border-[#E6EEF5]' : ''
+                  }`}
                 >
                   <Td className="w-[48px]">
                     <input
@@ -296,7 +192,9 @@ export default function SubscribersPage({
                   <Td className="text-right pr-5">
                     <span
                       className={`inline-block rounded-full px-2 py-1 text-xs font-medium ${
-                        r.isActive ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+                        r.isActive
+                          ? 'bg-green-100 text-green-700'
+                          : 'bg-red-100 text-red-700'
                       }`}
                     >
                       {r.isActive ? 'Active' : 'Expired'}
@@ -308,7 +206,145 @@ export default function SubscribersPage({
           </tbody>
         </table>
       </div>
+
+      {/* Simple announcement dialog */}
+      {isDialogOpen && (
+        <AnnouncementDialog
+          onClose={() => setIsDialogOpen(false)}
+          emails={selectedEmails}
+        />
+      )}
     </main>
+  );
+}
+
+/* ---------- Announcement Dialog (simple & focused) ---------- */
+
+function AnnouncementDialog({
+  emails,
+  onClose,
+}: {
+  emails: string[];
+  onClose: () => void;
+}) {
+  const [subject, setSubject] = useState('Announcement from C&A Retention');
+  const [body, setBody] = useState(
+    'Hello,\n\nWe have an update to share...\n\nBest regards,\nC&A Retention'
+  );
+  const [pending, setPending] = useState(false);
+  const [statusMsg, setStatusMsg] = useState<string | null>(null);
+
+  function textToHtml(text: string) {
+    return text.replace(/\n/g, '<br />');
+  }
+
+  async function handleSend(e: React.FormEvent) {
+    e.preventDefault();
+    if (!emails.length) return;
+
+    setPending(true);
+    setStatusMsg(null);
+
+    try {
+      const html = textToHtml(body);
+
+      const res = await sendAdminEmails({
+        name: 'subscribers-announcement',
+        emails,
+        emailTemplate: {
+          subject,
+          html,
+        },
+      });
+
+      if (!res || (res as any).ok === false) {
+        const error = (res as any)?.error || 'Failed to send emails.';
+        setStatusMsg(`❌ ${error}`);
+      } else {
+        setStatusMsg(`✅ Email sent to ${emails.length} subscriber(s).`);
+        // close after short delay
+        setTimeout(onClose, 900);
+      }
+    } catch (err: any) {
+      setStatusMsg(`❌ ${err?.message || 'Failed to send emails.'}`);
+    } finally {
+      setPending(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 p-4">
+      <div className="w-full max-w-md rounded-2xl bg-white p-5 shadow-xl">
+        <div className="mb-3 flex items-center justify-between">
+          <h4 className="text-xl font-semibold text-[#0F1F33]">
+            Send Announcement
+          </h4>
+          <button
+            type="button"
+            onClick={onClose}
+            className="rounded-md border border-[#E6EEF5] px-2 py-1 text-xs"
+          >
+            ✕
+          </button>
+        </div>
+
+        <p className="mb-3 text-xs text-[#6B7C8F]">
+          This email will be sent to{' '}
+          <span className="font-semibold text-[#0F1F33]">{emails.length}</span>{' '}
+          subscriber{emails.length === 1 ? '' : 's'}.
+        </p>
+
+        <form onSubmit={handleSend} className="space-y-3">
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1F33]">
+              Subject
+            </label>
+            <input
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              className="w-full rounded-xl border border-[#D6E3EE] bg-white px-3 py-2 text-sm text-[#0F1F33] outline-none focus:border-[#3D6984]"
+              placeholder="Email subject"
+            />
+          </div>
+
+          <div>
+            <label className="mb-1 block text-sm font-medium text-[#0F1F33]">
+              Message
+            </label>
+            <textarea
+              value={body}
+              onChange={(e) => setBody(e.target.value)}
+              className="w-full min-h-[120px] rounded-xl border border-[#D6E3EE] bg-white px-3 py-2 text-sm text-[#0F1F33] outline-none focus:border-[#3D6984]"
+              placeholder="Write your announcement…"
+            />
+          </div>
+
+          {statusMsg && (
+            <div className="rounded-md border border-[#CFE4FF] bg-[#F1F8FF] p-2 text-xs text-[#0B3A75]">
+              {statusMsg}
+            </div>
+          )}
+
+          <div className="flex justify-end gap-2 pt-1">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-full border border-[#D6E3EE] px-4 py-2 text-xs text-[#0F1F33]"
+              disabled={pending}
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              disabled={pending || !subject.trim() || !body.trim()}
+              className="rounded-full bg-gradient-to-b from-[#3D6984] to-[#1C2E4A] px-4 py-2 text-xs text-white disabled:opacity-40"
+            >
+              {pending ? 'Sending…' : 'Send Email'}
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
   );
 }
 
@@ -349,7 +385,9 @@ function fmtDate(iso?: string | null) {
   }
 }
 
-function deriveStatus(expiryISO?: string | null): { isActive: boolean; daysLeft: number | null } {
+function deriveStatus(
+  expiryISO?: string | null
+): { isActive: boolean; daysLeft: number | null } {
   if (!expiryISO) return { isActive: false, daysLeft: null };
   const expiry = new Date(expiryISO);
   if (Number.isNaN(expiry.getTime())) return { isActive: false, daysLeft: null };

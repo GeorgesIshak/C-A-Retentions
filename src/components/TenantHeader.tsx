@@ -10,7 +10,7 @@ export default function ClientHeader({ isLoggedIn }: { isLoggedIn: boolean }) {
   const [open, setOpen] = useState(false);
 
   const appNav = [
-    { name: "Dashboard", href: "/dashboard" },
+    { name: "Contact List", href: "/dashboard" },
     { name: "Profile", href: "/dashboard/profile" },
         { name: "Home", href: "/" },
 

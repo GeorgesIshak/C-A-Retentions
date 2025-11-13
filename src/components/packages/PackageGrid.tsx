@@ -139,6 +139,7 @@ export default function PackageGrid({
           price={Number(pkg.price)}
           description={pkg.description ?? ""}
           sms={Number(pkg.smsCount)}
+          whatsapp={Number(pkg.whatsappCount)}
           emails={Number(pkg.emailCount)}
           open={open === pkg.id}
           onClick={() => setOpen(open === pkg.id ? null : pkg.id)}

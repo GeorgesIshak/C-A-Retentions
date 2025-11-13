@@ -72,7 +72,6 @@ export async function listClients(): Promise<ContactRow[]> {
     });
 
     if (!res.ok) {
-      // keep logs short (502 pages are huge HTML)
       const brief = (await res.text()).slice(0, 300);
       console.error('listClients failed:', res.status, brief);
       return [];

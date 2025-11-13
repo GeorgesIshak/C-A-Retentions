@@ -9,7 +9,9 @@ type Props = {
   price: number;
   description: string;
   sms: number;
+  whatsapp: number;
   emails: number;
+  
   open: boolean;
   onClick: () => void;           
   onProceed?: () => void;        
@@ -23,6 +25,7 @@ export default function PackageCard({
   price,
   description,
   sms,
+  whatsapp,
   emails,
   open,
   onClick,
@@ -93,7 +96,7 @@ function onCtaClick(e: MouseEvent<HTMLButtonElement>) {
 
           {/* features list */}
           <ul className="mt-auto grid gap-4 text-[#172A45]">
-            {[`${sms} Number of SMS`, `${emails} Number of Emails`].map((item) => (
+            {[`${sms} Number of SMS`, `${whatsapp} Number of WhatsApp`, `${emails} Number of Emails`].map((item) => (
               <li key={item} className="flex items-center gap-3">
                 <Image
                   src="/images/checkcircle.svg"

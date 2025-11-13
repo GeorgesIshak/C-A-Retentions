@@ -40,3 +40,30 @@ p {
 }
 .animate-bob { animation: bob 3.6s ease-in-out infinite; }
 .animate-bob-delayed { animation: bob-delayed 4.2s ease-in-out infinite; }
+/* Stop iOS from zooming inputs on focus */
+input, select, textarea, button {
+  font-size: 16px !important;
+}
+
+/* Avoid unexpected iOS text auto-boosting in modals */
+html { -webkit-text-size-adjust: 100%; }
+
+/* React International Phone internal elements */
+.react-international-phone-input,
+.react-international-phone-input input,
+.react-international-phone-country-selector-button {
+  font-size: 16px !important;
+  line-height: 1.2;
+}
+
+/* Make sure the wrapper isn't transformed (which can cause funky zooming) */
+.react-international-phone-input-container {
+  transform: none !important;
+}
+
+/* Optional: if your modal wrapper had transforms for animation, disable them on small screens */
+@media (max-width: 480px) {
+  .ios-modal-root {
+    transform: none !important;
+  }
+}
